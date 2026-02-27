@@ -12,6 +12,25 @@ const STORAGE = {
 
 const DONATION_ADDRESS = '0x742d35Cc6634C0532925a3b844f5E3E7e3901234';
 
+// ─── Blockchain Config (Polygon Mainnet) ─────────────────────
+const POLYGON_RPC     = 'https://polygon-rpc.com';
+const SABLIER_LOCKUP  = '0xE0BFe071Da104e571298f8b6e0fcE44C512C1Ff4'; // SablierLockup v2.0
+const TOKEN_ADDRESSES = {
+  USDC: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+  EURC: '0xC891EB4cbdEFf6e073e859e987815Ed1505c2ACD',
+  DAI:  '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+  USDT: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+};
+const TOKEN_DECIMALS  = { USDC: 6, EURC: 6, DAI: 18, USDT: 6 };
+const ERC20_ABI = [
+  'function balanceOf(address) view returns (uint256)',
+  'function approve(address,uint256) returns (bool)',
+  'function allowance(address,address) view returns (uint256)'
+];
+const SABLIER_ABI = [
+  'function createWithTimestampsLT((address sender,address recipient,uint128 totalAmount,address asset,bool cancelable,bool transferable,(uint40 start,uint40 end) timestamps,(address account,uint256 fee) broker) params,(uint128 amount,uint40 timestamp)[] tranches) external payable returns (uint256 streamId)'
+];
+
 const PRESETS = [
   { icon: '🏠', name: 'Casa',       color: '#f59e0b' },
   { icon: '🚗', name: 'Auto',       color: '#3b82f6' },
@@ -42,10 +61,14 @@ const state = {
   dashChart:      null,
   vaultChart:     null,
   tempMnemonic:   null,  // only during onboarding
-  pinBuffer:      { set: '', unlock: '' },
-  pinStage:       'first', // 'first' | 'confirm'
-  pinFirst:       '',
-  afterRestorePin: false  // true when PIN set comes after restore
+  pinBuffer:        { set: '', unlock: '' },
+  pinStage:         'first', // 'first' | 'confirm'
+  pinFirst:         '',
+  afterRestorePin:  false,  // true when PIN set comes after restore
+  walletSigner:     null,   // ethers.Wallet connected to Polygon provider
+  pinVerifyBuffer:  '',
+  pinVerifyCallback: null,
+  currentLockAmount: 0
 };
 
 // ─── Crypto Helpers ──────────────────────────────────────────
@@ -180,6 +203,11 @@ async function handleSetPin() {
   localStorage.setItem(STORAGE.ADDRESS, state.address);
   // derive vault key from mnemonic
   state.vaultKey = await deriveKeyFromString(mnemonic, 'caveau-vaults-v1-' + state.address);
+  try {
+    const wallet2 = ethers.Wallet.fromPhrase(mnemonic);
+    const provider = new ethers.JsonRpcProvider(POLYGON_RPC);
+    state.walletSigner = wallet2.connect(provider);
+  } catch { /* RPC non-critical */ }
   state.tempMnemonic = null;
   state.pinBuffer.set = ''; state.pinFirst = ''; state.pinStage = 'first';
   await saveVaults();
@@ -198,6 +226,10 @@ async function handleUnlock() {
     if (wallet.address.toLowerCase() !== savedAddress.toLowerCase()) throw new Error('mismatch');
     state.address = wallet.address;
     state.vaultKey = await deriveKeyFromString(mnemonic, 'caveau-vaults-v1-' + state.address);
+    try {
+      const provider = new ethers.JsonRpcProvider(POLYGON_RPC);
+      state.walletSigner = wallet.connect(provider);
+    } catch { /* RPC non-critical */ }
     state.pinBuffer.unlock = '';
     updatePinDots('unlock', 0);
     await loadVaults();
@@ -549,22 +581,28 @@ function buildVaultChartData(vault) {
 // ─── Settings ────────────────────────────────────────────────
 App.showSettings = function() { openModal('modal-settings'); };
 
-App.showSeedPhrase = async function() {
+App.showSeedPhrase = function() {
   const blob = localStorage.getItem(STORAGE.SEED_ENC);
-  const salt = localStorage.getItem(STORAGE.PIN_SALT);
   if (!blob) return;
-  // Re-derive mnemonic requires PIN — show a small inline prompt
-  const pin = prompt('Inserisci il tuo PIN per vedere la Seed Phrase:');
-  if (!pin) return;
-  try {
-    const pinKey = await deriveKeyFromString(pin, 'caveau-pin-' + salt);
-    const mnemonic = await decrypt(pinKey, blob);
-    renderSeedWordGrid(mnemonic, 'show-seed-grid');
-    closeModal('modal-settings');
-    openModal('modal-show-seed');
-  } catch {
-    alert('PIN errato.');
-  }
+  state.pinVerifyBuffer = '';
+  updatePinDotsVerify(0);
+  document.getElementById('pin-verify-error').classList.add('hidden');
+  state.pinVerifyCallback = async (pin) => {
+    const salt = localStorage.getItem(STORAGE.PIN_SALT);
+    try {
+      const pinKey = await deriveKeyFromString(pin, 'caveau-pin-' + salt);
+      const mnemonic = await decrypt(pinKey, blob);
+      renderSeedWordGrid(mnemonic, 'show-seed-grid');
+      App.closeModal('modal-pin-verify');
+      App.closeModal('modal-settings');
+      App.openModal('modal-show-seed');
+    } catch {
+      state.pinVerifyBuffer = '';
+      updatePinDotsVerify(0);
+      showError('pin-verify-error', 'PIN errato. Riprova.');
+    }
+  };
+  App.openModal('modal-pin-verify');
 };
 
 App.copySeedPhrase = function() {
@@ -590,6 +628,128 @@ App.panicButton = function() {
   closeModal('modal-vault-detail');
   openModal('modal-panic');
 };
+
+// ─── PIN Verify Modal ────────────────────────────────────────
+function updatePinDotsVerify(len) {
+  document.querySelectorAll('#pin-dots-verify .pin-dot').forEach((d, i) => {
+    d.classList.toggle('filled', i < len);
+  });
+}
+
+App.pinVerifyKeyPress = function(digit) {
+  if (state.pinVerifyBuffer.length >= 6) return;
+  state.pinVerifyBuffer += digit;
+  updatePinDotsVerify(state.pinVerifyBuffer.length);
+  if (state.pinVerifyBuffer.length === 6) state.pinVerifyCallback?.(state.pinVerifyBuffer);
+};
+
+App.pinVerifyBackspace = function() {
+  state.pinVerifyBuffer = state.pinVerifyBuffer.slice(0, -1);
+  updatePinDotsVerify(state.pinVerifyBuffer.length);
+};
+
+// ─── Blockchain / Sablier ────────────────────────────────────
+async function getTokenBalance(address, currency) {
+  const tokenAddr = TOKEN_ADDRESSES[currency];
+  if (!tokenAddr) return null;
+  try {
+    const provider = state.walletSigner?.provider || new ethers.JsonRpcProvider(POLYGON_RPC);
+    const contract = new ethers.Contract(tokenAddr, ERC20_ABI, provider);
+    const raw = await contract.balanceOf(address);
+    return Number(ethers.formatUnits(raw, TOKEN_DECIMALS[currency] || 6));
+  } catch { return null; }
+}
+
+App.showSablierLock = async function() {
+  const vault = state.vaults.find(v => v.id === state.currentVaultId);
+  if (!vault) return;
+  const amount = parseFloat(document.getElementById('deposit-amount').value);
+  if (!amount || amount <= 0) { showError('deposit-error', 'Inserisci un importo valido.'); return; }
+  state.currentLockAmount = amount;
+
+  document.getElementById('lock-vault-name').textContent = vault.icon + ' ' + vault.name;
+  document.getElementById('lock-amount').textContent    = amount + ' ' + vault.currency;
+  document.getElementById('lock-date').textContent      = fmtDate(vault.unlockDate);
+  document.getElementById('lock-address').textContent   = state.address.slice(0,8) + '…' + state.address.slice(-6);
+  document.getElementById('lock-balance').textContent   = 'Caricamento...';
+  document.getElementById('lock-balance').className     = 'text-slate-400 text-sm';
+  document.getElementById('lock-status').textContent    = '';
+  const btn = document.getElementById('lock-execute-btn');
+  btn.disabled = false; btn.textContent = '🔒 Esegui Blocco';
+
+  App.closeModal('modal-vault-detail');
+  App.openModal('modal-sablier-lock');
+
+  const bal = await getTokenBalance(state.address, vault.currency);
+  const balEl = document.getElementById('lock-balance');
+  if (bal !== null) {
+    balEl.textContent = `Disponibile: ${bal.toFixed(2)} ${vault.currency}`;
+    balEl.className   = bal >= amount ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
+  } else {
+    balEl.textContent = 'Saldo non disponibile (controlla connessione)';
+  }
+};
+
+App.executeSablierLock = async function() {
+  const vault = state.vaults.find(v => v.id === state.currentVaultId);
+  if (!vault) return;
+  if (!state.walletSigner) {
+    showLockStatus('error', '❌ Wallet non connesso. Sblocca di nuovo l\'app.');
+    return;
+  }
+  const amount      = state.currentLockAmount;
+  const tokenAddr   = TOKEN_ADDRESSES[vault.currency];
+  if (!tokenAddr) { showLockStatus('error', '❌ Token non supportato su Polygon.'); return; }
+  const decimals    = TOKEN_DECIMALS[vault.currency] || 6;
+  const amountUnits = ethers.parseUnits(amount.toString(), decimals);
+  const endTs       = Math.floor(new Date(vault.unlockDate + 'T00:00:00').getTime() / 1000);
+  const nowTs       = Math.floor(Date.now() / 1000);
+
+  const btn = document.getElementById('lock-execute-btn');
+  btn.disabled = true;
+
+  try {
+    showLockStatus('pending', '1/2 — Approvazione USDC...');
+    const token    = new ethers.Contract(tokenAddr, ERC20_ABI, state.walletSigner);
+    const approveTx = await token.approve(SABLIER_LOCKUP, amountUnits);
+    showLockStatus('pending', '1/2 — Attendi conferma approvazione...');
+    await approveTx.wait();
+
+    showLockStatus('pending', '2/2 — Creazione stream Sablier...');
+    const sablier = new ethers.Contract(SABLIER_LOCKUP, SABLIER_ABI, state.walletSigner);
+    const params  = {
+      sender: state.address, recipient: state.address,
+      totalAmount: amountUnits, asset: tokenAddr,
+      cancelable: false, transferable: true,
+      timestamps: { start: nowTs, end: endTs },
+      broker: { account: ethers.ZeroAddress, fee: 0n }
+    };
+    const tranches = [{ amount: amountUnits, timestamp: endTs }];
+    const lockTx   = await sablier.createWithTimestampsLT(params, tranches);
+    showLockStatus('pending', '2/2 — Attendi conferma blocco...');
+    const receipt  = await lockTx.wait();
+
+    vault.transactions.push({
+      id: uid(), date: new Date().toISOString(), amount,
+      txHash: receipt.hash, onChain: true
+    });
+    await saveVaults();
+    document.getElementById('deposit-amount').value = '';
+    showLockStatus('success', `✅ Bloccato! TX: ${receipt.hash.slice(0,10)}…`);
+    btn.textContent = '✅ Bloccato!';
+    setTimeout(() => { App.closeModal('modal-sablier-lock'); renderVaultDetail(vault); renderDashboard(); App.openModal('modal-vault-detail'); }, 2500);
+  } catch(err) {
+    btn.disabled = false; btn.textContent = '🔒 Riprova';
+    showLockStatus('error', '❌ ' + (err.reason || err.shortMessage || err.message || 'Errore').slice(0, 120));
+  }
+};
+
+function showLockStatus(type, msg) {
+  const el = document.getElementById('lock-status');
+  const colors = { pending: 'text-yellow-400', success: 'text-green-400', error: 'text-red-400' };
+  el.className   = `text-sm mt-3 ${colors[type] || 'text-slate-400'}`;
+  el.textContent = msg;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────
 function vaultTotal(vault) {

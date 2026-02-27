@@ -203,8 +203,8 @@
 </div>
 
 <!-- MODAL: NEW VAULT -->
-<div id="modal-new-vault" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4">
-  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600 overflow-hidden">
+<div id="modal-new-vault" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-new-vault')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600 overflow-hidden" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
         <h3 class="text-xl font-bold">Nuovo Salvadanaio</h3>
@@ -242,8 +242,8 @@
 </div>
 
 <!-- MODAL: VAULT DETAIL -->
-<div id="modal-vault-detail" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4">
-  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600 max-h-[92vh] overflow-y-auto">
+<div id="modal-vault-detail" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-vault-detail')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
         <h3 class="text-xl font-bold" id="detail-title"></h3>
@@ -271,12 +271,13 @@
         <canvas id="vault-chart" height="90"></canvas>
       </div>
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
-        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Registra Versamento</p>
-        <p class="text-slate-500 text-xs mb-2">Dopo aver bloccato i fondi su Sablier, inserisci qui l'importo per registrarlo.</p>
-        <div class="flex gap-2">
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Blocca Fondi su Polygon</p>
+        <div id="deposit-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded-xl mb-2"></div>
+        <div class="flex gap-2 mb-2">
           <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="500" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
-          <button onclick="App.addDeposit()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">+ Lock</button>
+          <button onclick="App.showSablierLock()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">🔒 Blocca</button>
         </div>
+        <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Registra manualmente (senza blockchain)</button>
       </div>
       <div class="mb-4">
         <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Registro Transazioni</p>
@@ -290,8 +291,8 @@
 </div>
 
 <!-- MODAL: PANIC -->
-<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6">
-  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in">
+<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" onclick="App.closeModal('modal-panic')">
+  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in" onclick="event.stopPropagation()">
     <div class="text-6xl mb-4">🚫</div>
     <h3 class="text-2xl font-bold text-red-400 mb-2">ACCESSO NEGATO</h3>
     <p class="text-slate-300 mb-2">La matematica non ha sentimenti.</p>
@@ -302,8 +303,8 @@
 </div>
 
 <!-- MODAL: SETTINGS -->
-<div id="modal-settings" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4">
-  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600">
+<div id="modal-settings" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-50 items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-settings')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold">Impostazioni & Sicurezza</h3>
@@ -325,8 +326,8 @@
 </div>
 
 <!-- MODAL: SHOW SEED -->
-<div id="modal-show-seed" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-center justify-center p-4">
-  <div class="bg-slate-900 border border-amber-500/30 rounded-3xl w-full max-w-md p-6">
+<div id="modal-show-seed" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="App.closeModal('modal-show-seed')">
+  <div class="bg-slate-900 border border-amber-500/30 rounded-3xl w-full max-w-md p-6" onclick="event.stopPropagation()">
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-xl font-bold text-amber-400">⚠️ Seed Phrase</h3>
       <button onclick="App.closeModal('modal-show-seed')" class="text-slate-400 hover:text-white text-2xl">×</button>
@@ -334,6 +335,65 @@
     <p class="text-slate-400 text-sm mb-4">Non mostrare questo schermo a nessuno.</p>
     <div id="show-seed-grid" class="grid grid-cols-3 gap-2 mb-5"></div>
     <button onclick="App.copySeedPhrase()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">📋 Copia negli appunti</button>
+  </div>
+</div>
+
+<!-- MODAL: PIN VERIFY -->
+<div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" onclick="App.closeModal('modal-pin-verify')">
+  <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center" onclick="event.stopPropagation()">
+    <div class="text-4xl mb-3">🔑</div>
+    <h3 class="text-lg font-bold mb-1">Conferma PIN</h3>
+    <p class="text-slate-400 text-sm mb-6">Inserisci il PIN per continuare</p>
+    <div class="flex justify-center gap-3 mb-4" id="pin-dots-verify">
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div id="pin-verify-error" class="hidden text-red-400 text-xs mb-3 bg-red-500/10 py-2 px-3 rounded-xl"></div>
+    <div class="grid grid-cols-3 gap-2 max-w-[200px] mx-auto">
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('1')">1</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('2')">2</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('3')">3</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('4')">4</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('5')">5</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('6')">6</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('7')">7</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('8')">8</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('9')">9</button>
+      <div></div>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyKeyPress('0')">0</button>
+      <button class="pin-key bg-slate-800 rounded-2xl h-12 text-xl font-semibold" onclick="App.pinVerifyBackspace()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SABLIER LOCK -->
+<div id="modal-sablier-lock" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-sablier-lock')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-xl font-bold">🔒 Blocca su Sablier</h3>
+        <button onclick="App.closeModal('modal-sablier-lock')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+      </div>
+      <div class="bg-slate-900 rounded-2xl p-4 mb-4 space-y-2.5">
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Salvadanaio</span><span class="font-medium" id="lock-vault-name"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Importo</span><span class="font-bold text-blue-400" id="lock-amount"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Sblocco il</span><span class="font-medium" id="lock-date"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Wallet</span><span class="font-mono text-xs text-slate-300" id="lock-address"></span></div>
+        <div class="flex justify-between text-sm border-t border-slate-700 pt-2">
+          <span class="text-slate-400">Saldo</span>
+          <span id="lock-balance" class="text-slate-400 text-sm">Caricamento...</span>
+        </div>
+      </div>
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-4">
+        <p class="text-amber-400 text-xs font-semibold mb-1">⚠️ Operazione Irreversibile</p>
+        <p class="text-amber-300/70 text-xs">I fondi saranno matematicamente bloccati fino alla data impostata. Lo smart contract rifiuta qualsiasi prelievo anticipato.</p>
+      </div>
+      <div id="lock-status" class="text-sm min-h-[20px]"></div>
+      <div class="space-y-2 mt-4">
+        <button id="lock-execute-btn" onclick="App.executeSablierLock()" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 py-4 rounded-xl font-semibold transition-colors">🔒 Esegui Blocco</button>
+        <button onclick="App.closeModal('modal-sablier-lock')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Annulla</button>
+      </div>
+    </div>
   </div>
 </div>
 
