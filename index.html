@@ -60,7 +60,8 @@
       <p class="text-amber-400 text-sm font-semibold">⚠️ Attenzione Critica</p>
       <p class="text-amber-300/80 text-xs mt-1 leading-relaxed">Se perdi queste parole, perdi accesso ai risparmi <strong>per sempre</strong>. Nessuno può recuperarle.</p>
     </div>
-    <div id="seed-words-grid" class="grid grid-cols-3 gap-2.5 mb-8"></div>
+    <div id="seed-words-grid" class="grid grid-cols-3 gap-2.5 mb-4"></div>
+    <button onclick="App.copySeedCreate()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 py-3 rounded-xl text-sm font-medium transition-colors mb-4" id="copy-seed-create-btn">📋 Copia Seed Phrase</button>
     <div class="flex gap-3">
       <button onclick="App.goBack()" class="flex-1 bg-slate-800 border border-slate-700 py-4 rounded-xl font-medium text-sm transition-colors">Annulla</button>
       <button onclick="App.confirmSeedWritten()" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-4 px-4 rounded-xl font-semibold text-sm transition-colors">✅ L'ho scritta → Continua</button>

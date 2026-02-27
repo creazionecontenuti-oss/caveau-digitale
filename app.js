@@ -261,6 +261,15 @@ App.confirmSeedWritten = function() {
   showScreen('screen-set-pin');
 };
 
+App.copySeedCreate = function() {
+  if (!state.tempMnemonic) return;
+  navigator.clipboard.writeText(state.tempMnemonic);
+  const btn = document.getElementById('copy-seed-create-btn');
+  const orig = btn.textContent;
+  btn.textContent = '✅ Copiata!';
+  setTimeout(() => { btn.textContent = orig; }, 2000);
+};
+
 App.goBack = function() { showScreen('screen-welcome'); };
 
 App.showRestoreWallet = function() {
@@ -846,6 +855,19 @@ function renderRestoreInputs() {
       <input type="text" class="restore-word w-full bg-slate-900 border border-slate-600 rounded-xl px-2 pt-5 pb-2 text-sm font-mono text-white focus:outline-none focus:border-blue-500 lowercase"
         autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
     </div>`).join('');
+
+  // Smart paste: se incolli tutta la seed phrase nella prima casella, la distribuisce
+  document.querySelectorAll('.restore-word').forEach((input, idx) => {
+    input.addEventListener('paste', (e) => {
+      const text = (e.clipboardData || window.clipboardData).getData('text').trim();
+      const words = text.split(/\s+/);
+      if (words.length > 1) {
+        e.preventDefault();
+        const all = document.querySelectorAll('.restore-word');
+        words.slice(0, 12).forEach((w, i) => { if (all[idx + i]) all[idx + i].value = w.toLowerCase(); });
+      }
+    });
+  });
 }
 
 // ─── Init ────────────────────────────────────────────────────
