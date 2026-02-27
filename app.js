@@ -28,6 +28,10 @@ const PRESETS = [
 // ─── Public App namespace ──────────────────────────────────
 const App = {};
 
+// Expose modal helpers early so inline onclick handlers can resolve them
+App.openModal  = id => document.getElementById(id)?.classList.add('active');
+App.closeModal = id => document.getElementById(id)?.classList.remove('active');
+
 // ─── State ───────────────────────────────────────────────────
 const state = {
   address:        null,
