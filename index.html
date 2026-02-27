@@ -340,20 +340,6 @@
   </div>
 </div>
 
-<!-- MODAL: TRANSAK ON-RAMP -->
-<div id="modal-transak" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-0 md:p-4" onclick="App.closeModal('modal-transak')">
-  <div class="bg-slate-900 rounded-t-3xl md:rounded-3xl w-full max-w-md border border-slate-600 overflow-hidden" style="height:90vh;max-height:680px" onclick="event.stopPropagation()">
-    <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700">
-      <div>
-        <h3 class="font-bold">💳 Acquista USDC</h3>
-        <p class="text-slate-400 text-xs">Bonifico o carta → USDC su Polygon</p>
-      </div>
-      <button onclick="App.closeModal('modal-transak');document.getElementById('transak-iframe').src='';" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
-    </div>
-    <iframe id="transak-iframe" src="" allow="camera;microphone;clipboard-read;clipboard-write;payment" class="w-full" style="height:calc(100% - 65px);border:none;"></iframe>
-  </div>
-</div>
-
 <!-- MODAL: PIN VERIFY -->
 <div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" onclick="App.closeModal('modal-pin-verify')">
   <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center" onclick="event.stopPropagation()">
