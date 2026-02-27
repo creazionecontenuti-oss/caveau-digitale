@@ -350,19 +350,39 @@ async function checkVaultNotifications() {
 }
 
 App.openOnramp = function() {
-  const apiKey = 'pk_test_01KJG8GV9BFSG4FJ4N672GQDE3';
-  const url = new URL('https://widget.onramper.com');
-  url.searchParams.set('apiKey', apiKey);
-  url.searchParams.set('defaultCrypto', 'USDC');
-  url.searchParams.set('defaultNetwork', 'polygon');
-  url.searchParams.set('themeName', 'dark');
-  url.searchParams.set('primaryColor', '3b82f6');
-  url.searchParams.set('containerColor', '0f172a');
-  url.searchParams.set('cardColor', '1e293b');
-  url.searchParams.set('borderRadius', '16');
-  if (state.address) url.searchParams.set('wallets', `USDC:polygon:${state.address}`);
-  document.getElementById('onramp-iframe').src = url.toString();
+  document.getElementById('onramp-address').textContent = state.address || '—';
+  document.getElementById('onramp-copied').classList.add('hidden');
   App.openModal('modal-onramp');
+};
+
+App.copyOnrampAddress = function() {
+  navigator.clipboard.writeText(state.address || '');
+  document.getElementById('onramp-copied').classList.remove('hidden');
+  setTimeout(() => document.getElementById('onramp-copied').classList.add('hidden'), 2000);
+};
+
+App.openTransak = function() {
+  const url = new URL('https://global.transak.com/');
+  url.searchParams.set('defaultCryptoCurrency', 'USDC');
+  url.searchParams.set('network', 'polygon');
+  url.searchParams.set('colorMode', 'DARK');
+  if (state.address) url.searchParams.set('walletAddress', state.address);
+  window.open(url.toString(), '_blank');
+};
+
+App.openGuardarian = function() {
+  const url = new URL('https://guardarian.com/buy-crypto');
+  url.searchParams.set('to_currency', 'USDC_MATIC');
+  url.searchParams.set('from_currency', 'EUR');
+  if (state.address) url.searchParams.set('to_wallet_address', state.address);
+  window.open(url.toString(), '_blank');
+};
+
+App.openMoonpay = function() {
+  const url = new URL('https://buy.moonpay.com/');
+  url.searchParams.set('defaultCurrencyCode', 'usdc_polygon');
+  if (state.address) url.searchParams.set('walletAddress', state.address);
+  window.open(url.toString(), '_blank');
 };
 
 function renderDashboard() {

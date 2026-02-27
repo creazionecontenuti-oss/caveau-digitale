@@ -342,16 +342,38 @@
 </div>
 
 <!-- MODAL: ON-RAMP -->
-<div id="modal-onramp" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-0 md:p-4" onclick="App.closeModal('modal-onramp')">
-  <div class="bg-slate-900 rounded-t-3xl md:rounded-3xl w-full max-w-md border border-slate-700 overflow-hidden flex flex-col" style="height:92vh;max-height:680px" onclick="event.stopPropagation()">
-    <div class="flex justify-between items-center px-5 py-4 border-b border-slate-700 shrink-0">
-      <div>
-        <h3 class="font-bold">💳 Acquista USDC</h3>
-        <p class="text-slate-400 text-xs">Carta o bonifico → USDC su Polygon</p>
+<div id="modal-onramp" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-onramp')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h3 class="text-xl font-bold">💳 Acquista USDC</h3>
+          <p class="text-slate-400 text-xs mt-0.5">Carta o bonifico → USDC su Polygon</p>
+        </div>
+        <button onclick="App.closeModal('modal-onramp')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
-      <button onclick="App.closeModal('modal-onramp')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+      <div class="bg-slate-900 rounded-2xl p-4 mb-4">
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Il tuo indirizzo Polygon</p>
+        <p class="font-mono text-xs break-all text-white" id="onramp-address">—</p>
+        <button onclick="App.copyOnrampAddress()" class="mt-2 text-blue-400 hover:text-blue-300 text-xs transition-colors">📋 Copia indirizzo</button>
+        <span id="onramp-copied" class="hidden text-green-400 text-xs ml-2">✅ Copiato!</span>
+      </div>
+      <div class="space-y-2.5">
+        <button onclick="App.openGuardarian()" class="w-full flex items-center justify-between bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">Guardarian</p><p class="text-slate-400 text-xs">Bonifico SEPA, carta — ottimo per Italia/Europa</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+        <button onclick="App.openMoonpay()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">MoonPay</p><p class="text-slate-400 text-xs">Carta di credito/debito</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+        <button onclick="App.openTransak()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">Transak</p><p class="text-slate-400 text-xs">Apple Pay, Google Pay, carta</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+      </div>
+      <p class="text-slate-600 text-xs mt-4 text-center">Servizi di terze parti. L'indirizzo è già precompilato.</p>
     </div>
-    <iframe id="onramp-iframe" src="" allow="camera;microphone;payment;clipboard-write" class="w-full flex-1 border-none"></iframe>
   </div>
 </div>
 
