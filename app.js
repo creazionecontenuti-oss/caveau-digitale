@@ -359,10 +359,11 @@ App.openTransak = function() {
   window.open(url.toString(), '_blank');
 };
 
-App.openRamp = function() {
-  const url = new URL('https://app.ramp.network/');
-  url.searchParams.set('defaultAsset', 'MATIC_USDC');
-  if (state.address) url.searchParams.set('userAddress', state.address);
+App.openGuardarian = function() {
+  const url = new URL('https://guardarian.com/buy-crypto');
+  url.searchParams.set('crypto_currencies_to_currency_ticker', 'USDC');
+  url.searchParams.set('crypto_currencies_to_network', 'POLYGON');
+  if (state.address) url.searchParams.set('to_crypto_wallet_address', state.address);
   window.open(url.toString(), '_blank');
 };
 
