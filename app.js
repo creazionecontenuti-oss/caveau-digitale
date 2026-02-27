@@ -315,7 +315,39 @@ function showDashboard() {
   const link = document.getElementById('polygonscan-link');
   link.href = `https://polygonscan.com/address/${state.address}`;
   renderDashboard();
+  checkVaultNotifications();
 }
+
+async function checkVaultNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') await Notification.requestPermission();
+  if (Notification.permission !== 'granted') return;
+  const notified = JSON.parse(localStorage.getItem('caveau_notified') || '{}');
+  let changed = false;
+  state.vaults.forEach(v => {
+    if (daysUntil(v.unlockDate) <= 0 && !notified[v.id]) {
+      new Notification('\uD83D\uDD13 ' + v.icon + ' ' + v.name + ' sbloccato!', {
+        body: 'Il tuo salvadanaio \u00e8 pronto. Puoi finalmente prelevare.',
+        icon: '/icon-192.png', tag: 'vault-' + v.id
+      });
+      notified[v.id] = true;
+      changed = true;
+    }
+  });
+  if (changed) localStorage.setItem('caveau_notified', JSON.stringify(notified));
+}
+
+App.openTransak = function() {
+  const url = new URL('https://global.transak.com/');
+  url.searchParams.set('defaultCryptoCurrency', 'USDC');
+  url.searchParams.set('network', 'polygon');
+  url.searchParams.set('colorMode', 'DARK');
+  url.searchParams.set('themeColor', '3b82f6');
+  url.searchParams.set('disableWalletAddressForm', 'true');
+  if (state.address) url.searchParams.set('walletAddress', state.address);
+  document.getElementById('transak-iframe').src = url.toString();
+  App.openModal('modal-transak');
+};
 
 function renderDashboard() {
   const vaults = state.vaults;
@@ -483,14 +515,20 @@ function renderTxList(vault) {
     el.innerHTML = '<p class="text-slate-500 text-sm text-center py-3">Nessun versamento ancora</p>';
     return;
   }
-  el.innerHTML = [...vault.transactions].reverse().map(tx => `
+  el.innerHTML = [...vault.transactions].reverse().map(tx => {
+    const hashShort = tx.txHash.slice(0,10) + '\u2026' + tx.txHash.slice(-6);
+    const badge     = tx.onChain
+      ? `<a href="https://polygonscan.com/tx/${tx.txHash}" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 underline mt-0.5 block">${hashShort} \u2197</a>`
+      : `<p class="text-xs text-slate-600 font-mono mt-0.5">${hashShort} <span class="text-slate-700">(locale)</span></p>`;
+    return `
     <div class="bg-slate-800 rounded-xl px-4 py-3 flex justify-between items-center">
       <div>
-        <p class="text-sm font-semibold">🔒 +${tx.amount} ${vault.currency}</p>
-        <p class="text-xs text-slate-500 font-mono mt-0.5">${tx.txHash.slice(0,10)}…${tx.txHash.slice(-6)}</p>
+        <p class="text-sm font-semibold">${tx.onChain ? '\uD83D\uDD12' : '\uD83D\uDCDD'} +${tx.amount} ${vault.currency}</p>
+        ${badge}
       </div>
       <span class="text-xs text-slate-400">${fmtDateShort(tx.date.split('T')[0])}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 App.addDeposit = async function() {
