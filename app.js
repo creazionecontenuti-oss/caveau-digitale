@@ -386,6 +386,7 @@ App.onrampNext = function() {
   document.getElementById('onramp-qr').src =
     `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addr)}&margin=0`;
   const label = `→ ${amt}€`;
+  document.getElementById('onramp-label-mtpelerin').textContent = label;
   document.getElementById('onramp-label-guardarian').textContent = label;
   document.getElementById('onramp-label-moonpay').textContent = label;
   document.getElementById('onramp-label-transak').textContent = label;
@@ -404,6 +405,18 @@ App.copyOnrampAddress = function() {
   navigator.clipboard.writeText(state.address || '');
   document.getElementById('onramp-copied').classList.remove('hidden');
   setTimeout(() => document.getElementById('onramp-copied').classList.add('hidden'), 2000);
+};
+
+App.openMtPelerin = function() {
+  const url = new URL('https://widget.mtpelerin.com/');
+  url.searchParams.set('lang', 'it');
+  url.searchParams.set('tab', 'buy');
+  url.searchParams.set('net', 'matic_mainnet');
+  url.searchParams.set('bsc', 'USDC');
+  url.searchParams.set('rfr', 'sJ71NPhD');
+  if (_onramp.amount) url.searchParams.set('amt', _onramp.amount);
+  if (state.address) url.searchParams.set('addr', state.address);
+  window.open(url.toString(), '_blank');
 };
 
 App.openGuardarian = function() {
@@ -425,10 +438,12 @@ App.openMoonpay = function() {
 
 App.openTransak = function() {
   const url = new URL('https://global.transak.com/');
+  url.searchParams.set('apiKey', 'd16ab573-f9d8-44b1-90ed-f3685670674d');
   url.searchParams.set('defaultCryptoCurrency', 'USDC');
   url.searchParams.set('network', 'polygon');
   url.searchParams.set('colorMode', 'DARK');
   url.searchParams.set('fiatCurrency', 'EUR');
+  url.searchParams.set('disableWalletAddressForm', 'true');
   if (_onramp.amount) url.searchParams.set('fiatAmount', _onramp.amount);
   if (state.address) url.searchParams.set('walletAddress', state.address);
   window.open(url.toString(), '_blank');

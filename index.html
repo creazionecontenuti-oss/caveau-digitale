@@ -386,6 +386,10 @@
         </div>
         <p class="text-slate-500 text-xs mb-3">Indirizzo e importo sono già precompilati — scegli dove pagare:</p>
         <div class="space-y-2">
+          <button onclick="App.openMtPelerin()" class="w-full flex items-center justify-between bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/40 px-4 py-3 rounded-xl transition-colors">
+            <div class="text-left"><p class="font-semibold text-sm">🇨🇭 Mt Pelerin <span class="text-emerald-400 text-xs font-normal ml-1">consigliato</span></p><p class="text-slate-400 text-xs">Bonifico SEPA · no KYC fino a 1000€ · svizzero</p></div>
+            <span class="text-emerald-400 text-xs font-bold" id="onramp-label-mtpelerin"></span>
+          </button>
           <button onclick="App.openGuardarian()" class="w-full flex items-center justify-between bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 px-4 py-3 rounded-xl transition-colors">
             <div class="text-left"><p class="font-semibold text-sm">Guardarian</p><p class="text-slate-400 text-xs">Bonifico SEPA · carta · ottimo per Italia</p></div>
             <span class="text-blue-400 text-xs font-bold" id="onramp-label-guardarian"></span>
