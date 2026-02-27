@@ -414,6 +414,7 @@ App.openMtPelerin = function() {
   url.searchParams.set('net', 'matic_mainnet');
   url.searchParams.set('bsc', 'USDC');
   url.searchParams.set('rfr', 'sJ71NPhD');
+  url.searchParams.set('code', 'bec6626e-8913-497d-9835-6e6ae9edb144');
   if (_onramp.amount) url.searchParams.set('amt', _onramp.amount);
   if (state.address) url.searchParams.set('addr', state.address);
   window.open(url.toString(), '_blank');
