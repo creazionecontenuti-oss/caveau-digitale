@@ -370,9 +370,9 @@ App.openTransak = function() {
 
 App.openGuardarian = function() {
   const url = new URL('https://guardarian.com/buy-crypto');
-  url.searchParams.set('crypto_currencies_to_currency_ticker', 'USDC');
-  url.searchParams.set('crypto_currencies_to_network', 'POLYGON');
-  if (state.address) url.searchParams.set('to_crypto_wallet_address', state.address);
+  url.searchParams.set('to_currency', 'USDC_MATIC');
+  url.searchParams.set('from_currency', 'EUR');
+  if (state.address) url.searchParams.set('to_wallet_address', state.address);
   window.open(url.toString(), '_blank');
 };
 
