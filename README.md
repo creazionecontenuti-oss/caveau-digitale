@@ -4,7 +4,9 @@
 
 Una PWA (Progressive Web App) non-custodial che trasforma la forza di volontà in un vincolo matematico. I tuoi risparmi vengono bloccati in uno Smart Contract fino alla data che scegli — nessuno, nemmeno te, può toccarli prima.
 
-**🌐 Demo live:** [caveau-digitale.vercel.app](https://caveau-digitale.vercel.app)
+**🌐 Demo live:** [piggyvault.xyz](https://piggyvault.xyz) · [caveau-digitale.vercel.app](https://caveau-digitale.vercel.app)
+
+**🐙 IPFS (permanente):** [dweb.link](https://bafybeihulskwibpzkpc27vbuksfypc7vvw26iipmapmcyhz6pl37jp3uwm.ipfs.dweb.link/caveau-digitale/) · CID: `bafybeihulskwibpzkpc27vbuksfypc7vvw26iipmapmcyhz6pl37jp3uwm`
 
 ---
 
