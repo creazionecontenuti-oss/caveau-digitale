@@ -345,7 +345,7 @@ App.openTransak = function() {
   url.searchParams.set('themeColor', '3b82f6');
   url.searchParams.set('disableWalletAddressForm', 'true');
   if (state.address) url.searchParams.set('walletAddress', state.address);
-  window.open(url.toString(), '_blank', 'width=450,height=700,noopener,noreferrer');
+  window.open(url.toString(), '_blank');
 };
 
 function renderDashboard() {
