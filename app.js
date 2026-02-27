@@ -10,7 +10,7 @@ const STORAGE = {
   PIN_SALT:  'caveau_pin_salt'
 };
 
-const DONATION_ADDRESS = '0x742d35Cc6634C0532925a3b844f5E3E7e3901234';
+const DONATION_ADDRESS = '0xa359bb875A08b0A392541638Aa614a2e59D63b2C';
 
 // ─── Blockchain Config (Polygon Mainnet) ─────────────────────
 const POLYGON_RPC     = 'https://polygon-rpc.com';
