@@ -348,31 +348,58 @@
       <div class="flex justify-between items-center mb-5">
         <div>
           <h3 class="text-xl font-bold">💳 Acquista USDC</h3>
-          <p class="text-slate-400 text-xs mt-0.5">Carta o bonifico → USDC su Polygon</p>
+          <p class="text-slate-400 text-xs mt-0.5" id="onramp-subtitle">Quanti euro vuoi convertire?</p>
         </div>
         <button onclick="App.closeModal('modal-onramp')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
-      <div class="bg-slate-900 rounded-2xl p-4 mb-4">
-        <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Il tuo indirizzo Polygon</p>
-        <p class="font-mono text-xs break-all text-white" id="onramp-address">—</p>
-        <button onclick="App.copyOnrampAddress()" class="mt-2 text-blue-400 hover:text-blue-300 text-xs transition-colors">📋 Copia indirizzo</button>
-        <span id="onramp-copied" class="hidden text-green-400 text-xs ml-2">✅ Copiato!</span>
+
+      <!-- STEP 1: scegli importo -->
+      <div id="onramp-step1">
+        <div class="grid grid-cols-4 gap-2 mb-3">
+          <button onclick="App.setOnrampAmount(20)"  class="onramp-preset bg-slate-700 hover:bg-blue-600 border border-slate-600 hover:border-blue-500 py-3 rounded-xl text-sm font-bold transition-all">20€</button>
+          <button onclick="App.setOnrampAmount(50)"  class="onramp-preset bg-slate-700 hover:bg-blue-600 border border-slate-600 hover:border-blue-500 py-3 rounded-xl text-sm font-bold transition-all">50€</button>
+          <button onclick="App.setOnrampAmount(100)" class="onramp-preset bg-slate-700 hover:bg-blue-600 border border-slate-600 hover:border-blue-500 py-3 rounded-xl text-sm font-bold transition-all">100€</button>
+          <button onclick="App.setOnrampAmount(200)" class="onramp-preset bg-slate-700 hover:bg-blue-600 border border-slate-600 hover:border-blue-500 py-3 rounded-xl text-sm font-bold transition-all">200€</button>
+        </div>
+        <div class="relative mb-5">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">€</span>
+          <input id="onramp-amount-input" type="number" min="10" placeholder="Altro importo…"
+            class="w-full bg-slate-900 border border-slate-600 focus:border-blue-500 rounded-xl pl-8 pr-4 py-3 text-sm text-white focus:outline-none"
+            oninput="App.setOnrampAmountCustom(this.value)">
+        </div>
+        <button onclick="App.onrampNext()" class="w-full bg-blue-600 hover:bg-blue-500 py-3.5 rounded-xl font-semibold text-sm transition-colors">Continua →</button>
       </div>
-      <div class="space-y-2.5">
-        <button onclick="App.openGuardarian()" class="w-full flex items-center justify-between bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 px-4 py-3.5 rounded-xl transition-colors">
-          <div class="text-left"><p class="font-semibold text-sm">Guardarian</p><p class="text-slate-400 text-xs">Bonifico SEPA, carta — ottimo per Italia/Europa</p></div>
-          <span class="text-slate-400 text-sm">→</span>
-        </button>
-        <button onclick="App.openMoonpay()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
-          <div class="text-left"><p class="font-semibold text-sm">MoonPay</p><p class="text-slate-400 text-xs">Carta di credito/debito</p></div>
-          <span class="text-slate-400 text-sm">→</span>
-        </button>
-        <button onclick="App.openTransak()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
-          <div class="text-left"><p class="font-semibold text-sm">Transak</p><p class="text-slate-400 text-xs">Apple Pay, Google Pay, carta</p></div>
-          <span class="text-slate-400 text-sm">→</span>
-        </button>
+
+      <!-- STEP 2: QR + provider -->
+      <div id="onramp-step2" class="hidden">
+        <button onclick="App.onrampBack()" class="text-slate-400 hover:text-white text-xs mb-4 flex items-center gap-1">← Cambia importo</button>
+        <div class="flex gap-4 mb-4">
+          <div class="shrink-0 bg-white p-1.5 rounded-xl">
+            <img id="onramp-qr" src="" alt="QR" class="w-20 h-20 block rounded-lg">
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Il tuo indirizzo</p>
+            <p class="font-mono text-xs break-all text-white leading-relaxed" id="onramp-address">—</p>
+            <button onclick="App.copyOnrampAddress()" class="mt-1.5 text-blue-400 hover:text-blue-300 text-xs transition-colors">📋 Copia</button>
+            <span id="onramp-copied" class="hidden text-green-400 text-xs ml-2">✅</span>
+          </div>
+        </div>
+        <p class="text-slate-500 text-xs mb-3">Indirizzo e importo sono già precompilati — scegli dove pagare:</p>
+        <div class="space-y-2">
+          <button onclick="App.openGuardarian()" class="w-full flex items-center justify-between bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 px-4 py-3 rounded-xl transition-colors">
+            <div class="text-left"><p class="font-semibold text-sm">Guardarian</p><p class="text-slate-400 text-xs">Bonifico SEPA · carta · ottimo per Italia</p></div>
+            <span class="text-blue-400 text-xs font-bold" id="onramp-label-guardarian"></span>
+          </button>
+          <button onclick="App.openMoonpay()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3 rounded-xl transition-colors">
+            <div class="text-left"><p class="font-semibold text-sm">MoonPay</p><p class="text-slate-400 text-xs">Carta di credito/debito</p></div>
+            <span class="text-slate-400 text-xs font-bold" id="onramp-label-moonpay"></span>
+          </button>
+          <button onclick="App.openTransak()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3 rounded-xl transition-colors">
+            <div class="text-left"><p class="font-semibold text-sm">Transak</p><p class="text-slate-400 text-xs">Apple Pay · Google Pay · carta</p></div>
+            <span class="text-slate-400 text-xs font-bold" id="onramp-label-transak"></span>
+          </button>
+        </div>
       </div>
-      <p class="text-slate-600 text-xs mt-4 text-center">Servizi di terze parti. L'indirizzo è già precompilato.</p>
     </div>
   </div>
 </div>

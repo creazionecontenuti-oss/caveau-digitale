@@ -349,10 +349,55 @@ async function checkVaultNotifications() {
   if (changed) localStorage.setItem('caveau_notified', JSON.stringify(notified));
 }
 
+const _onramp = { amount: 0 };
+
 App.openOnramp = function() {
-  document.getElementById('onramp-address').textContent = state.address || '—';
-  document.getElementById('onramp-copied').classList.add('hidden');
+  _onramp.amount = 0;
+  document.getElementById('onramp-step1').classList.remove('hidden');
+  document.getElementById('onramp-step2').classList.add('hidden');
+  document.getElementById('onramp-subtitle').textContent = 'Quanti euro vuoi convertire?';
+  document.getElementById('onramp-amount-input').value = '';
+  document.querySelectorAll('.onramp-preset').forEach(b => b.classList.remove('bg-blue-600','border-blue-500'));
   App.openModal('modal-onramp');
+};
+
+App.setOnrampAmount = function(val) {
+  _onramp.amount = val;
+  document.getElementById('onramp-amount-input').value = '';
+  document.querySelectorAll('.onramp-preset').forEach(b => b.classList.remove('bg-blue-600','border-blue-500'));
+  event.currentTarget.classList.add('bg-blue-600','border-blue-500');
+};
+
+App.setOnrampAmountCustom = function(val) {
+  _onramp.amount = parseFloat(val) || 0;
+  document.querySelectorAll('.onramp-preset').forEach(b => b.classList.remove('bg-blue-600','border-blue-500'));
+};
+
+App.onrampNext = function() {
+  if (!_onramp.amount || _onramp.amount < 10) {
+    document.getElementById('onramp-amount-input').focus();
+    document.getElementById('onramp-amount-input').placeholder = 'Minimo 10€';
+    return;
+  }
+  const addr = state.address || '';
+  const amt = _onramp.amount;
+  document.getElementById('onramp-address').textContent = addr;
+  document.getElementById('onramp-copied').classList.add('hidden');
+  document.getElementById('onramp-qr').src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addr)}&margin=0`;
+  const label = `→ ${amt}€`;
+  document.getElementById('onramp-label-guardarian').textContent = label;
+  document.getElementById('onramp-label-moonpay').textContent = label;
+  document.getElementById('onramp-label-transak').textContent = label;
+  document.getElementById('onramp-subtitle').textContent = `Stai acquistando ~${amt} USDC`;
+  document.getElementById('onramp-step1').classList.add('hidden');
+  document.getElementById('onramp-step2').classList.remove('hidden');
+};
+
+App.onrampBack = function() {
+  document.getElementById('onramp-step1').classList.remove('hidden');
+  document.getElementById('onramp-step2').classList.add('hidden');
+  document.getElementById('onramp-subtitle').textContent = 'Quanti euro vuoi convertire?';
 };
 
 App.copyOnrampAddress = function() {
@@ -361,19 +406,11 @@ App.copyOnrampAddress = function() {
   setTimeout(() => document.getElementById('onramp-copied').classList.add('hidden'), 2000);
 };
 
-App.openTransak = function() {
-  const url = new URL('https://global.transak.com/');
-  url.searchParams.set('defaultCryptoCurrency', 'USDC');
-  url.searchParams.set('network', 'polygon');
-  url.searchParams.set('colorMode', 'DARK');
-  if (state.address) url.searchParams.set('walletAddress', state.address);
-  window.open(url.toString(), '_blank');
-};
-
 App.openGuardarian = function() {
   const url = new URL('https://guardarian.com/buy-crypto');
   url.searchParams.set('to_currency', 'USDC_MATIC');
   url.searchParams.set('from_currency', 'EUR');
+  if (_onramp.amount) url.searchParams.set('from_amount', _onramp.amount);
   if (state.address) url.searchParams.set('to_wallet_address', state.address);
   window.open(url.toString(), '_blank');
 };
@@ -381,6 +418,18 @@ App.openGuardarian = function() {
 App.openMoonpay = function() {
   const url = new URL('https://buy.moonpay.com/');
   url.searchParams.set('defaultCurrencyCode', 'usdc_polygon');
+  if (_onramp.amount) url.searchParams.set('baseCurrencyAmount', _onramp.amount);
+  if (state.address) url.searchParams.set('walletAddress', state.address);
+  window.open(url.toString(), '_blank');
+};
+
+App.openTransak = function() {
+  const url = new URL('https://global.transak.com/');
+  url.searchParams.set('defaultCryptoCurrency', 'USDC');
+  url.searchParams.set('network', 'polygon');
+  url.searchParams.set('colorMode', 'DARK');
+  url.searchParams.set('fiatCurrency', 'EUR');
+  if (_onramp.amount) url.searchParams.set('fiatAmount', _onramp.amount);
   if (state.address) url.searchParams.set('walletAddress', state.address);
   window.open(url.toString(), '_blank');
 };
