@@ -386,10 +386,8 @@ App.onrampNext = function() {
   document.getElementById('onramp-qr').src =
     `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addr)}&margin=0`;
   const label = `→ ${amt}€`;
-  document.getElementById('onramp-label-mtpelerin').textContent = label;
-  document.getElementById('onramp-label-guardarian').textContent = label;
-  document.getElementById('onramp-label-moonpay').textContent = label;
-  document.getElementById('onramp-label-transak').textContent = label;
+  ['onramp-label-mtpelerin','onramp-label-guardarian','onramp-label-moonpay','onramp-label-transak']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = label; });
   document.getElementById('onramp-subtitle').textContent = `Stai acquistando ~${amt} USDC`;
   document.getElementById('onramp-step1').classList.add('hidden');
   document.getElementById('onramp-step2').classList.remove('hidden');
