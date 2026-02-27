@@ -148,7 +148,7 @@
       </div>
       <div class="flex items-center gap-3">
         <span class="bg-green-500/15 text-green-400 text-xs px-2.5 py-1 rounded-full border border-green-500/25 font-medium">🟢 Polygon</span>
-        <button onclick="App.openTransak()" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 text-xs px-3 py-1.5 rounded-full font-medium transition-colors">💳 Compra</button>
+        <button onclick="App.openOnramp()" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 text-xs px-3 py-1.5 rounded-full font-medium transition-colors">💳 Compra</button>
         <button onclick="App.showSettings()" class="text-slate-400 hover:text-white text-xl">⚙️</button>
       </div>
     </div>
@@ -337,6 +337,43 @@
     <p class="text-slate-400 text-sm mb-4">Non mostrare questo schermo a nessuno.</p>
     <div id="show-seed-grid" class="grid grid-cols-3 gap-2 mb-5"></div>
     <button onclick="App.copySeedPhrase()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">📋 Copia negli appunti</button>
+  </div>
+</div>
+
+<!-- MODAL: ON-RAMP -->
+<div id="modal-onramp" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-onramp')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h3 class="text-xl font-bold">💳 Acquista USDC</h3>
+          <p class="text-slate-400 text-xs mt-0.5">Carta o bonifico → USDC su Polygon</p>
+        </div>
+        <button onclick="App.closeModal('modal-onramp')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+      </div>
+      <div class="bg-slate-900 rounded-2xl p-4 mb-4">
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-2">Il tuo indirizzo Polygon</p>
+        <p class="font-mono text-xs break-all text-white" id="onramp-address">—</p>
+        <button onclick="App.copyOnrampAddress()" class="mt-2 text-blue-400 hover:text-blue-300 text-xs transition-colors">📋 Copia indirizzo</button>
+        <span id="onramp-copied" class="hidden text-green-400 text-xs ml-2">✅ Copiato!</span>
+      </div>
+      <p class="text-slate-400 text-sm mb-4">Scegli il servizio con cui acquistare. L'USDC arriverà direttamente al tuo indirizzo.</p>
+      <div class="space-y-2.5">
+        <button onclick="App.openTransak()" class="w-full flex items-center justify-between bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">Transak</p><p class="text-slate-400 text-xs">Carta, bonifico, Apple Pay</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+        <button onclick="App.openRamp()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">Ramp Network</p><p class="text-slate-400 text-xs">Carta, bonifico SEPA</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+        <button onclick="App.openMoonpay()" class="w-full flex items-center justify-between bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-3.5 rounded-xl transition-colors">
+          <div class="text-left"><p class="font-semibold text-sm">MoonPay</p><p class="text-slate-400 text-xs">Carta di credito/debito</p></div>
+          <span class="text-slate-400 text-sm">→</span>
+        </button>
+      </div>
+      <p class="text-slate-600 text-xs mt-4 text-center">Servizi di terze parti. Verifica sempre l'indirizzo prima di confermare.</p>
+    </div>
   </div>
 </div>
 

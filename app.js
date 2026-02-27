@@ -337,13 +337,38 @@ async function checkVaultNotifications() {
   if (changed) localStorage.setItem('caveau_notified', JSON.stringify(notified));
 }
 
+App.openOnramp = function() {
+  document.getElementById('onramp-address').textContent = state.address || '—';
+  document.getElementById('onramp-copied').classList.add('hidden');
+  App.openModal('modal-onramp');
+};
+
+App.copyOnrampAddress = function() {
+  navigator.clipboard.writeText(state.address || '');
+  document.getElementById('onramp-copied').classList.remove('hidden');
+  setTimeout(() => document.getElementById('onramp-copied').classList.add('hidden'), 2000);
+};
+
 App.openTransak = function() {
   const url = new URL('https://global.transak.com/');
   url.searchParams.set('defaultCryptoCurrency', 'USDC');
   url.searchParams.set('network', 'polygon');
   url.searchParams.set('colorMode', 'DARK');
   url.searchParams.set('themeColor', '3b82f6');
-  url.searchParams.set('disableWalletAddressForm', 'true');
+  if (state.address) url.searchParams.set('walletAddress', state.address);
+  window.open(url.toString(), '_blank');
+};
+
+App.openRamp = function() {
+  const url = new URL('https://app.ramp.network/');
+  url.searchParams.set('defaultAsset', 'MATIC_USDC');
+  if (state.address) url.searchParams.set('userAddress', state.address);
+  window.open(url.toString(), '_blank');
+};
+
+App.openMoonpay = function() {
+  const url = new URL('https://buy.moonpay.com/');
+  url.searchParams.set('defaultCurrencyCode', 'usdc_polygon');
   if (state.address) url.searchParams.set('walletAddress', state.address);
   window.open(url.toString(), '_blank');
 };
