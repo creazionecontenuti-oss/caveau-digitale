@@ -36,10 +36,10 @@ const CAVEAU_ABI = [
   'function nextVaultId() view returns (uint256)'
 ];
 const UNLOCK_MODES = [
-  { label: '📅 Solo Data',            hint: 'Si sblocca quando arriva la data scelta.' },
-  { label: '💰 Solo Importo',          hint: 'Si sblocca quando raggiungi la cifra obiettivo.' },
-  { label: '📅o💰 Primo che arriva',    hint: 'Si sblocca quando arriva la data OPPURE raggiungi la cifra.' },
-  { label: '📅+💰 Entrambi',           hint: 'Si sblocca solo quando arriva la data E hai raggiunto la cifra.' }
+  { label: '📅 A una data',            hint: 'Si apre quando arriva la data che scegli.' },
+  { label: '💰 A una cifra',            hint: 'Si apre quando raggiungi la cifra che vuoi.' },
+  { label: '📅 o 💰 Il primo dei due',  hint: 'Si apre quando arriva la data OPPURE raggiungi la cifra.' },
+  { label: '📅 + 💰 Tutti e due',       hint: 'Si apre solo quando arriva la data E hai raggiunto la cifra.' }
 ];
 
 // ─── Auto-Swap Config (Paraswap) ────────────────────────────
@@ -230,7 +230,7 @@ async function handleSetPin() {
     state.pinBuffer.set = ''; state.pinFirst = ''; state.pinStage = 'first';
     updatePinDots('set', 0);
     document.getElementById('set-pin-title').textContent = 'Crea il tuo PIN';
-    document.getElementById('set-pin-desc').textContent = 'Scegli un PIN di 6 cifre per sbloccare il Caveau rapidamente.';
+    document.getElementById('set-pin-desc').textContent = 'Scegli 6 numeri per aprire la tua app velocemente.';
     showError('pin-error-set', 'I PIN non corrispondono. Riprova.');
     return;
   }
@@ -296,7 +296,7 @@ App.confirmSeedWritten = function() {
   state.afterRestorePin = false;
   updatePinDots('set', 0);
   document.getElementById('set-pin-title').textContent = 'Crea il tuo PIN';
-  document.getElementById('set-pin-desc').textContent = 'Scegli un PIN di 6 cifre per sbloccare il Caveau rapidamente.';
+  document.getElementById('set-pin-desc').textContent = 'Scegli 6 numeri per aprire la tua app velocemente.';
   document.getElementById('pin-error-set').classList.add('hidden');
   showScreen('screen-set-pin');
 };
@@ -313,15 +313,15 @@ App.copySeedCreate = function() {
 App.goBack = function() { showScreen('screen-welcome'); };
 
 App.showRestoreWallet = function() {
-  document.getElementById('restore-title').textContent = 'Ripristina Portafoglio';
-  document.getElementById('restore-desc').textContent = 'Inserisci le tue 12 parole nell\'ordine corretto.';
+  document.getElementById('restore-title').textContent = 'Recupera il tuo account';
+  document.getElementById('restore-desc').textContent = 'Inserisci le 12 parole segrete che avevi salvato, nell\'ordine corretto.';
   renderRestoreInputs();
   showScreen('screen-seed-restore');
 };
 
 App.forgotPin = function() {
-  document.getElementById('restore-title').textContent = 'Sblocca con Seed Phrase';
-  document.getElementById('restore-desc').textContent = 'Inserisci le 12 parole per resettare il PIN.';
+  document.getElementById('restore-title').textContent = 'Recupera con le parole segrete';
+  document.getElementById('restore-desc').textContent = 'Inserisci le 12 parole per reimpostare il PIN.';
   state.afterRestorePin = true;
   renderRestoreInputs();
   showScreen('screen-seed-restore');
@@ -331,7 +331,7 @@ App.restoreWallet = async function() {
   const words = [...document.querySelectorAll('.restore-word')]
     .map(i => i.value.trim().toLowerCase()).filter(w => w);
   if (words.length !== 12) {
-    showError('restore-error', 'Inserisci tutte e 12 le parole della Seed Phrase.');
+    showError('restore-error', 'Inserisci tutte e 12 le parole segrete.');
     return;
   }
   const mnemonic = words.join(' ');
@@ -353,7 +353,7 @@ App.restoreWallet = async function() {
     document.getElementById('pin-error-set').classList.add('hidden');
     showScreen('screen-set-pin');
   } catch {
-    showError('restore-error', 'Seed Phrase non valida. Controlla le parole.');
+    showError('restore-error', 'Le parole non sono corrette. Controlla e riprova.');
   }
 };
 
@@ -375,8 +375,8 @@ async function checkVaultNotifications() {
   let changed = false;
   state.vaults.forEach(v => {
     if (isVaultUnlocked(v) && !notified[v.id]) {
-      new Notification('\uD83D\uDD13 ' + v.icon + ' ' + v.name + ' sbloccato!', {
-        body: 'Il tuo salvadanaio \u00e8 pronto. Puoi finalmente prelevare.',
+      new Notification('\uD83D\uDD13 ' + v.icon + ' ' + v.name + ' è aperto!', {
+        body: 'Il tuo salvadanaio è pronto! Puoi finalmente ritirare i soldi.',
         icon: '/icon-192.png', tag: 'vault-' + v.id
       });
       notified[v.id] = true;
@@ -504,11 +504,11 @@ function renderDashboard() {
       document.getElementById('stat-days-left').textContent = `${remaining.toFixed(0)} ${next.currency} mancanti`;
     }
   } else if (vaults.length) {
-    document.getElementById('stat-next-unlock').textContent = '🔓 Tutti sbloccati';
+    document.getElementById('stat-next-unlock').textContent = '🔓 Tutti aperti';
     document.getElementById('stat-days-left').textContent = '';
   } else {
     document.getElementById('stat-next-unlock').textContent = '—';
-    document.getElementById('stat-days-left').textContent = 'nessun vincolo';
+    document.getElementById('stat-days-left').textContent = 'nessun salvadanaio';
   }
 
   renderVaultCards();
@@ -537,9 +537,9 @@ function renderVaultCards() {
     const mode = vault.unlockMode ?? 0;
     let statusText = '';
     if (unlocked) {
-      statusText = '🔓 Sbloccato!';
+      statusText = '🔓 Aperto!';
     } else if (mode === 0) {
-      statusText = `🔒 ${daysUntil(vault.unlockDate)}g al blocco`;
+      statusText = `🔒 ${daysUntil(vault.unlockDate)}g rimasti`;
     } else if (mode === 1) {
       const remaining = Math.max(0, vault.target - total);
       statusText = `🔒 Mancano ${remaining.toFixed(0)} ${vault.currency}`;
@@ -675,7 +675,7 @@ function renderVaultDetail(vault) {
 
   const countdown = document.getElementById('detail-countdown');
   if (unlocked) {
-    countdown.textContent = '🔓 SBLOCCATO';
+    countdown.textContent = '🔓 APERTO!';
     countdown.style.color = '#4ade80';
   } else {
     countdown.style.color = '#f1f5f9';
@@ -900,7 +900,7 @@ App.copyDonationAddress = function() {
 };
 
 App.confirmDeleteWallet = function() {
-  if (!confirm('SEI SICURO? Tutti i dati del Caveau saranno rimossi da questo dispositivo. Assicurati di avere la Seed Phrase!')) return;
+  if (!confirm('SEI SICURO? Tutti i dati saranno rimossi da questo dispositivo. Assicurati di aver salvato le 12 parole segrete!')) return;
   [STORAGE.ADDRESS, STORAGE.SEED_ENC, STORAGE.VAULTS_ENC, STORAGE.PIN_SALT].forEach(k => localStorage.removeItem(k));
   Object.assign(state, { address: null, vaultKey: null, vaults: [], currentVaultId: null });
   closeModal('modal-settings');
@@ -988,10 +988,10 @@ App.showCaveauLock = async function() {
   const btn = document.getElementById('lock-execute-btn');
   btn.disabled = false;
   if (state._swapMode) {
-    btn.textContent = '💱 Swap & Blocca';
+    btn.textContent = '💱 Converti e Blocca';
     btn.onclick = () => App.executeSwapAndLock();
   } else {
-    btn.textContent = '🔒 Esegui Blocco';
+    btn.textContent = '🔒 Blocca i soldi';
     btn.onclick = () => App.executeCaveauLock();
   }
 
@@ -1033,7 +1033,7 @@ App.executeCaveauLock = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
   if (!state.walletSigner) {
-    showLockStatus('error', '❌ Wallet non connesso. Sblocca di nuovo l\'app.');
+    showLockStatus('error', '❌ Non sei connesso. Riapri l\'app e riprova.');
     return;
   }
   const amount      = state.currentLockAmount;
@@ -1056,9 +1056,9 @@ App.executeCaveauLock = async function() {
       const unlockTs = vault.unlockDate
         ? Math.floor(new Date(vault.unlockDate + 'T00:00:00').getTime() / 1000)
         : 0;
-      showLockStatus('pending', '1/3 — Creazione Caveau on-chain...');
+      showLockStatus('pending', '1/3 — Preparazione del salvadanaio...');
       const createTx = await caveau.createVault(tokenAddr, targetUnits, unlockTs, mode);
-      showLockStatus('pending', '1/3 — Attendi conferma...');
+      showLockStatus('pending', '1/3 — Attendi la conferma...');
       const createReceipt = await createTx.wait();
       const createLog = createReceipt.logs.find(l => {
         try { return caveau.interface.parseLog(l)?.name === 'VaultCreated'; } catch { return false; }
@@ -1073,15 +1073,15 @@ App.executeCaveauLock = async function() {
     }
 
     // Step 2: Approve token
-    showLockStatus('pending', '2/3 — Approvazione token...');
+    showLockStatus('pending', '2/3 — Autorizzazione in corso...');
     const approveTx = await token.approve(CAVEAU_CONTRACT, amountUnits);
-    showLockStatus('pending', '2/3 — Attendi conferma approvazione...');
+    showLockStatus('pending', '2/3 — Attendi la conferma...');
     await approveTx.wait();
 
     // Step 3: Deposit into on-chain vault
-    showLockStatus('pending', '3/3 — Deposito nel Caveau...');
+    showLockStatus('pending', '3/3 — Blocco dei soldi in corso...');
     const depositTx = await caveau.deposit(vault.onChainVaultId, amountUnits);
-    showLockStatus('pending', '3/3 — Attendi conferma deposito...');
+    showLockStatus('pending', '3/3 — Quasi fatto...');
     const receipt = await depositTx.wait();
 
     vault.transactions.push({
@@ -1090,8 +1090,8 @@ App.executeCaveauLock = async function() {
     });
     await saveVaults();
     document.getElementById('deposit-amount').value = '';
-    showLockStatus('success', `✅ Bloccato! TX: ${receipt.hash.slice(0,10)}…`);
-    btn.textContent = '✅ Bloccato!';
+    showLockStatus('success', `✅ Soldi bloccati con successo!`);
+    btn.textContent = '✅ Fatto!';
     setTimeout(() => { App.closeModal('modal-caveau-lock'); renderVaultDetail(vault); renderDashboard(); App.openModal('modal-vault-detail'); }, 2500);
   } catch(err) {
     btn.disabled = false; btn.textContent = '🔒 Riprova';
@@ -1138,7 +1138,7 @@ App.onSrcTokenChange = function() {
     document.getElementById('deposit-lock-btn').textContent = '🔒 Blocca';
   } else {
     quoteBox.classList.remove('hidden');
-    document.getElementById('deposit-lock-btn').textContent = '💱 Swap & Blocca';
+    document.getElementById('deposit-lock-btn').textContent = '💱 Converti e Blocca';
     App.fetchSwapPreview();
   }
 };
@@ -1168,7 +1168,7 @@ App.fetchSwapPreview = async function() {
 
 App.executeSwapAndLock = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
-  if (!vault || !state.walletSigner) { showLockStatus('error','❌ Wallet non connesso.'); return; }
+  if (!vault || !state.walletSigner) { showLockStatus('error','❌ Non sei connesso. Riapri l\'app.'); return; }
   const srcSymbol = document.getElementById('deposit-src-token').value;
   const amount = state.currentLockAmount;
   const srcToken = SWAP_TOKENS.find(t => t.symbol === srcSymbol);
@@ -1181,20 +1181,20 @@ App.executeSwapAndLock = async function() {
 
   try {
     // Step 1: Get fresh quote
-    showLockStatus('pending', '1/4 — Ottengo quotazione swap...');
+    showLockStatus('pending', '1/4 — Calcolo conversione...');
     const route = await getSwapQuote(srcToken.address, destAddr, srcAmountRaw, srcToken.decimals, destDec);
     const swapTxData = await buildSwapTx(route, state.address);
 
     // Step 2: Approve source token (skip for native MATIC)
     if (srcToken.address !== NATIVE_TOKEN) {
-      showLockStatus('pending', '2/4 — Approvazione token per swap...');
+      showLockStatus('pending', '2/4 — Autorizzazione in corso...');
       const token = new ethers.Contract(srcToken.address, ERC20_ABI, state.walletSigner);
       const approveTx = await token.approve(swapTxData.to, srcAmountRaw);
       await approveTx.wait();
     }
 
     // Step 3: Execute swap
-    showLockStatus('pending', '3/4 — Esecuzione swap...');
+    showLockStatus('pending', '3/4 — Conversione in corso...');
     const txParams = {
       to: swapTxData.to, data: swapTxData.data,
       value: swapTxData.value || '0', gasLimit: swapTxData.gas || 500000n,
@@ -1204,7 +1204,7 @@ App.executeSwapAndLock = async function() {
     const destAmount = Number(ethers.formatUnits(route.destAmount, destDec));
 
     // Step 4: Now deposit the swapped tokens into Caveau
-    showLockStatus('pending', '4/4 — Deposito nel Caveau...');
+    showLockStatus('pending', '4/4 — Blocco dei soldi...');
     const caveau = new ethers.Contract(CAVEAU_CONTRACT, CAVEAU_ABI, state.walletSigner);
     const destToken = new ethers.Contract(destAddr, ERC20_ABI, state.walletSigner);
 
@@ -1228,8 +1228,8 @@ App.executeSwapAndLock = async function() {
     vault.transactions.push({ id: uid(), date: new Date().toISOString(), amount: destAmount, txHash: receipt.hash, onChain: true, swappedFrom: srcSymbol });
     await saveVaults();
     document.getElementById('deposit-amount').value = '';
-    showLockStatus('success', `✅ Swappato e bloccato! ${amount} ${srcSymbol} → ${destAmount.toFixed(2)} ${vault.currency}`);
-    btn.textContent = '✅ Bloccato!';
+    showLockStatus('success', `✅ Convertito e bloccato! ${amount} ${srcSymbol} → ${destAmount.toFixed(2)} ${vault.currency}`);
+    btn.textContent = '✅ Fatto!';
     setTimeout(() => { App.closeModal('modal-caveau-lock'); renderVaultDetail(vault); renderDashboard(); App.openModal('modal-vault-detail'); }, 2500);
   } catch(err) {
     btn.disabled = false; btn.textContent = '🔒 Riprova';
@@ -1366,7 +1366,7 @@ async function checkAndShowMaticWarning() {
 }
 
 App.autoGetMatic = async function() {
-  if (!state.walletSigner) { showError('deposit-error', 'Wallet non connesso.'); return; }
+  if (!state.walletSigner) { showError('deposit-error', 'Non sei connesso. Riapri l\'app.'); return; }
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
   const destAddr = TOKEN_ADDRESSES[vault.currency];
@@ -1375,7 +1375,7 @@ App.autoGetMatic = async function() {
   const warn = document.getElementById('matic-warning');
 
   try {
-    warn.innerHTML = '⛽ Swapping un po\' di ' + vault.currency + ' → MATIC per il gas...';
+    warn.innerHTML = '⛽ Preparazione commissioni in corso...';
     const route = await getSwapQuote(destAddr, NATIVE_TOKEN, maticNeeded.toString(), destDec, 18);
     const swapTxData = await buildSwapTx(route, state.address);
     const token = new ethers.Contract(destAddr, ERC20_ABI, state.walletSigner);
@@ -1386,7 +1386,7 @@ App.autoGetMatic = async function() {
       gasLimit: swapTxData.gas || 400000n,
     });
     await tx.wait();
-    warn.innerHTML = '✅ MATIC ottenuto! Ora puoi operare.';
+    warn.innerHTML = '✅ Commissioni pronte! Ora puoi continuare.';
     warn.className = 'bg-green-500/10 border border-green-500/30 text-green-400 text-xs p-2 rounded-xl mb-2';
     setTimeout(() => warn.classList.add('hidden'), 3000);
   } catch(err) {

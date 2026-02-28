@@ -1,7 +1,7 @@
 {
-  "name": "Caveau Digitale",
-  "short_name": "Caveau",
-  "description": "Protocollo di Risparmio Inviolabile su Blockchain",
+  "name": "PiggyVault",
+  "short_name": "PiggyVault",
+  "description": "Il salvadanaio che nemmeno tu puoi rompere",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

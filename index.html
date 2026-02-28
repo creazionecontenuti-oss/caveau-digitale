@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Caveau Digitale</title>
+  <title>PiggyVault — Il salvadanaio che non si rompe</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,20 +33,20 @@
 <div id="screen-welcome" class="screen min-h-screen items-center justify-center p-6">
   <div class="w-full max-w-sm mx-auto text-center">
     <div class="fade-in mb-12">
-      <div class="text-8xl mb-5">🔐</div>
-      <h1 class="text-4xl font-bold mb-2">Caveau Digitale</h1>
-      <p class="text-slate-400 mb-3">Protocollo di Risparmio Inviolabile</p>
-      <div class="flex justify-center gap-4 text-xs text-slate-500">
-        <span>⛓ Non-Custodial</span><span class="text-slate-700">•</span>
-        <span>📂 Open Source</span><span class="text-slate-700">•</span>
-        <span>🌐 Web3</span>
-      </div>
+      <div class="text-8xl mb-5">�</div>
+      <h1 class="text-4xl font-bold mb-2">PiggyVault</h1>
+      <p class="text-slate-400 mb-3 text-lg">Il salvadanaio che nemmeno tu puoi rompere.</p>
+      <p class="text-slate-500 text-sm max-w-xs mx-auto leading-relaxed">Metti da parte i tuoi soldi e bloccali fino alla data che scegli. Nessuno può toccarli prima — nemmeno tu.</p>
     </div>
     <div class="space-y-3">
-      <button onclick="App.startCreateWallet()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-base font-semibold shadow-lg shadow-blue-900/30 transition-colors">🆕 Crea Nuovo Portafoglio</button>
-      <button onclick="App.showRestoreWallet()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-2xl text-base font-semibold transition-colors">🔑 Ripristina con Seed Phrase</button>
+      <button onclick="App.startCreateWallet()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl text-base font-semibold shadow-lg shadow-blue-900/30 transition-colors">✨ Inizia — è gratis</button>
+      <button onclick="App.showRestoreWallet()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-2xl text-base font-semibold transition-colors">🔑 Ho già un account</button>
     </div>
-    <p class="text-slate-600 text-xs mt-8 leading-relaxed">Le tue chiavi non lasciano mai questo dispositivo.<br>Nessun server. Nessun intermediario.</p>
+    <div class="flex justify-center gap-6 mt-8 text-xs text-slate-500">
+      <span>🔒 Privato</span>
+      <span>🆓 Gratuito</span>
+      <span>📱 Funziona offline</span>
+    </div>
   </div>
 </div>
 
@@ -54,17 +54,17 @@
 <div id="screen-seed-create" class="screen min-h-screen p-6">
   <div class="w-full max-w-md mx-auto">
     <button onclick="App.goBack()" class="text-slate-400 hover:text-white mb-6 flex items-center gap-1 text-sm">← Indietro</button>
-    <h2 class="text-2xl font-bold mb-1">La tua Seed Phrase</h2>
-    <p class="text-slate-400 text-sm mb-4">Queste 12 parole sono l'unica chiave del tuo Caveau. Scrivile su carta adesso.</p>
+    <h2 class="text-2xl font-bold mb-1">🔑 Le tue 12 parole segrete</h2>
+    <p class="text-slate-400 text-sm mb-4">Queste parole sono la <strong class="text-white">combinazione della tua cassaforte</strong>. Sono l'unico modo per recuperare i tuoi risparmi se cambi telefono.</p>
     <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6">
-      <p class="text-amber-400 text-sm font-semibold">⚠️ Attenzione Critica</p>
-      <p class="text-amber-300/80 text-xs mt-1 leading-relaxed">Se perdi queste parole, perdi accesso ai risparmi <strong>per sempre</strong>. Nessuno può recuperarle.</p>
+      <p class="text-amber-400 text-sm font-semibold">📝 Scrivile su carta adesso</p>
+      <p class="text-amber-300/80 text-xs mt-1 leading-relaxed">Copiala su un foglio e mettilo al sicuro. Se perdi queste parole, <strong>nessuno</strong> potrà aiutarti a recuperare i soldi — nemmeno noi.</p>
     </div>
     <div id="seed-words-grid" class="grid grid-cols-3 gap-2.5 mb-4"></div>
-    <button onclick="App.copySeedCreate()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 py-3 rounded-xl text-sm font-medium transition-colors mb-4" id="copy-seed-create-btn">📋 Copia Seed Phrase</button>
+    <button onclick="App.copySeedCreate()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 py-3 rounded-xl text-sm font-medium transition-colors mb-4" id="copy-seed-create-btn">📋 Copia le parole</button>
     <div class="flex gap-3">
       <button onclick="App.goBack()" class="flex-1 bg-slate-800 border border-slate-700 py-4 rounded-xl font-medium text-sm transition-colors">Annulla</button>
-      <button onclick="App.confirmSeedWritten()" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-4 px-4 rounded-xl font-semibold text-sm transition-colors">✅ L'ho scritta → Continua</button>
+      <button onclick="App.confirmSeedWritten()" class="flex-[2] bg-blue-600 hover:bg-blue-500 py-4 px-4 rounded-xl font-semibold text-sm transition-colors">✅ Fatto, le ho salvate</button>
     </div>
   </div>
 </div>
@@ -74,7 +74,7 @@
   <div class="w-full max-w-xs mx-auto text-center">
     <div class="text-5xl mb-4">🔑</div>
     <h2 class="text-2xl font-bold mb-1" id="set-pin-title">Crea il tuo PIN</h2>
-    <p class="text-slate-400 text-sm mb-8" id="set-pin-desc">Scegli un PIN di 6 cifre per sbloccare il Caveau rapidamente.</p>
+    <p class="text-slate-400 text-sm mb-8" id="set-pin-desc">Scegli 6 numeri per aprire la tua app velocemente.</p>
     <div class="flex justify-center gap-3 mb-8" id="pin-dots-set">
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
@@ -101,9 +101,9 @@
 <div id="screen-unlock" class="screen min-h-screen items-center justify-center p-6">
   <div class="w-full max-w-xs mx-auto text-center">
     <div class="text-5xl mb-3">🔐</div>
-    <h2 class="text-2xl font-bold mb-1">Bentornato</h2>
+    <h2 class="text-2xl font-bold mb-1">Bentornato! 👋</h2>
     <p class="text-slate-500 text-xs mb-1" id="unlock-address-short"></p>
-    <p class="text-slate-400 text-sm mb-8">Inserisci il PIN per sbloccare il Caveau</p>
+    <p class="text-slate-400 text-sm mb-8">Inserisci il tuo PIN per entrare</p>
     <div class="flex justify-center gap-3 mb-8" id="pin-dots-unlock">
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
       <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
@@ -123,7 +123,7 @@
       <button class="pin-key bg-slate-800 rounded-2xl h-14 text-xl font-semibold" onclick="App.pinKeyPress('0','unlock')">0</button>
       <button class="pin-key bg-slate-800 rounded-2xl h-14 text-xl font-semibold" onclick="App.pinBackspace('unlock')">⌫</button>
     </div>
-    <button onclick="App.forgotPin()" class="text-slate-500 hover:text-slate-300 text-sm mt-6 block mx-auto transition-colors">PIN dimenticato? Usa la Seed Phrase →</button>
+    <button onclick="App.forgotPin()" class="text-slate-500 hover:text-slate-300 text-sm mt-6 block mx-auto transition-colors">PIN dimenticato? Recupera con le 12 parole →</button>
   </div>
 </div>
 
@@ -131,11 +131,11 @@
 <div id="screen-seed-restore" class="screen min-h-screen p-6">
   <div class="w-full max-w-md mx-auto">
     <button onclick="App.goBack()" class="text-slate-400 hover:text-white mb-6 flex items-center gap-1 text-sm">← Indietro</button>
-    <h2 class="text-2xl font-bold mb-1" id="restore-title">Ripristina Portafoglio</h2>
-    <p class="text-slate-400 text-sm mb-6" id="restore-desc">Inserisci le tue 12 parole nell'ordine corretto.</p>
+    <h2 class="text-2xl font-bold mb-1" id="restore-title">Recupera il tuo account</h2>
+    <p class="text-slate-400 text-sm mb-6" id="restore-desc">Inserisci le 12 parole segrete che avevi salvato, nell'ordine corretto.</p>
     <div id="restore-words-grid" class="grid grid-cols-3 gap-2 mb-5"></div>
     <div id="restore-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-xl mb-4"></div>
-    <button onclick="App.restoreWallet()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-semibold transition-colors">🔓 Ripristina e Continua</button>
+    <button onclick="App.restoreWallet()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-semibold transition-colors">🔓 Recupera i miei risparmi</button>
   </div>
 </div>
 
@@ -144,12 +144,11 @@
   <header class="bg-slate-800/80 backdrop-blur-md sticky top-0 z-10 px-4 py-3 border-b border-slate-700/50">
     <div class="max-w-4xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-2.5">
-        <span class="text-2xl">🔐</span>
-        <div><span class="font-bold text-base block leading-tight">Caveau Digitale</span><span class="text-xs text-slate-500">Protocollo Inviolabile</span></div>
+        <span class="text-2xl">�</span>
+        <div><span class="font-bold text-base block leading-tight">PiggyVault</span><span class="text-xs text-slate-500">I tuoi risparmi al sicuro</span></div>
       </div>
       <div class="flex items-center gap-3">
-        <span class="bg-green-500/15 text-green-400 text-xs px-2.5 py-1 rounded-full border border-green-500/25 font-medium">🟢 Polygon</span>
-        <button onclick="App.openOnramp()" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 text-xs px-3 py-1.5 rounded-full font-medium transition-colors">💳 Compra</button>
+        <button onclick="App.openOnramp()" class="bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 text-xs px-3 py-1.5 rounded-full font-medium transition-colors">💳 Aggiungi soldi</button>
         <button onclick="App.showSettings()" class="text-slate-400 hover:text-white text-xl">⚙️</button>
       </div>
     </div>
@@ -159,10 +158,10 @@
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
       <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700 col-span-2 md:col-span-1">
-        <p class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Capitale Congelato</p>
+        <p class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Totale Bloccato</p>
         <div class="flex items-baseline gap-2">
           <p class="text-3xl font-bold" id="stat-total">0.00</p>
-          <span class="text-slate-400 text-sm" id="stat-currency">USDC</span>
+          <span class="text-slate-400 text-sm" id="stat-currency">$</span>
         </div>
       </div>
       <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
@@ -173,7 +172,7 @@
       <div class="bg-slate-800 rounded-2xl p-5 border border-slate-700">
         <p class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-2">Prossimo Sblocco</p>
         <p class="text-base font-bold leading-tight" id="stat-next-unlock">—</p>
-        <p class="text-slate-400 text-xs mt-1" id="stat-days-left">nessun vincolo</p>
+        <p class="text-slate-400 text-xs mt-1" id="stat-days-left">nessun salvadanaio</p>
       </div>
     </div>
 
@@ -186,19 +185,19 @@
       <div id="empty-vaults" class="col-span-full border-2 border-dashed border-slate-700/60 rounded-2xl p-12 text-center text-slate-500">
         <div class="text-5xl mb-3">🎯</div>
         <p class="font-medium">Nessun salvadanaio ancora</p>
-        <p class="text-sm mt-1">Crea il tuo primo vincolo per iniziare</p>
+        <p class="text-sm mt-1">Crea il primo e inizia a mettere da parte!</p>
       </div>
     </div>
 
     <div id="chart-section" class="hidden bg-slate-800 rounded-2xl p-6 border border-slate-700 mb-8">
-      <h3 class="font-semibold mb-1">Andamento Complessivo</h3>
-      <p class="text-slate-400 text-xs mb-4">Progressione totale dei fondi congelati</p>
+      <h3 class="font-semibold mb-1">I Tuoi Progressi</h3>
+      <p class="text-slate-400 text-xs mb-4">Come stanno crescendo i tuoi risparmi</p>
       <canvas id="main-chart" height="100"></canvas>
     </div>
 
     <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 text-center">
-      <p class="text-slate-400 text-sm mb-3">Questo protocollo è gratuito e open source.<br>Se ti è utile, considera una piccola mancia.</p>
-      <button onclick="App.copyDonationAddress()" class="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 px-5 py-2.5 rounded-full text-sm font-medium transition-colors">☕ Dona 1 USDC</button>
+      <p class="text-slate-400 text-sm mb-3">PiggyVault è gratis e open source.<br>Se ti piace, offrici un caffè ☕</p>
+      <button onclick="App.copyDonationAddress()" class="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 px-5 py-2.5 rounded-full text-sm font-medium transition-colors">☕ Dona</button>
       <p id="donation-copied" class="hidden text-green-400 text-xs mt-2">✅ Indirizzo copiato!</p>
     </div>
   </main>
@@ -209,44 +208,45 @@
   <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600 overflow-hidden" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold">Nuovo Salvadanaio</h3>
+        <h3 class="text-xl font-bold">🐷 Nuovo Salvadanaio</h3>
         <button onclick="App.closeModal('modal-new-vault')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
-      <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Scegli l'Obiettivo</p>
+      <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Per cosa stai risparmiando?</p>
       <div id="icon-picker" class="grid grid-cols-5 gap-2 mb-5"></div>
       <div class="mb-4">
-        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Nome</label>
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Dai un nome</label>
         <input id="vault-name" type="text" maxlength="30" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="es. Vacanze a Ibiza">
       </div>
       <div class="mb-4">
-        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Quando si sblocca?</label>
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Quando puoi riaprirlo?</label>
         <div class="grid grid-cols-2 gap-2">
-          <button type="button" onclick="App.setUnlockMode(0)" id="mode-btn-0" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-blue-500 bg-blue-500/15 text-blue-400 transition-all">📅 Solo Data</button>
-          <button type="button" onclick="App.setUnlockMode(1)" id="mode-btn-1" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">💰 Solo Importo</button>
-          <button type="button" onclick="App.setUnlockMode(2)" id="mode-btn-2" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅o💰 Primo che arriva</button>
-          <button type="button" onclick="App.setUnlockMode(3)" id="mode-btn-3" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅+💰 Entrambi</button>
+          <button type="button" onclick="App.setUnlockMode(0)" id="mode-btn-0" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-blue-500 bg-blue-500/15 text-blue-400 transition-all">📅 A una data</button>
+          <button type="button" onclick="App.setUnlockMode(1)" id="mode-btn-1" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">💰 A una cifra</button>
+          <button type="button" onclick="App.setUnlockMode(2)" id="mode-btn-2" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅 o 💰 Il primo dei due</button>
+          <button type="button" onclick="App.setUnlockMode(3)" id="mode-btn-3" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅 + 💰 Tutti e due</button>
         </div>
-        <p id="mode-hint" class="text-slate-500 text-xs mt-2">Si sblocca quando arriva la data scelta.</p>
+        <p id="mode-hint" class="text-slate-500 text-xs mt-2">Si apre quando arriva la data che scegli.</p>
       </div>
       <div class="mb-4">
         <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Valuta</label>
         <select id="vault-currency" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
-          <option value="USDC">USDC</option>
-          <option value="EURC">EURC</option>
-          <option value="DAI">DAI</option>
-          <option value="USDT">USDT</option>
+          <option value="USDC">USDC (dollaro digitale)</option>
+          <option value="EURC">EURC (euro digitale)</option>
+          <option value="DAI">DAI (dollaro digitale)</option>
+          <option value="USDT">USDT (dollaro digitale)</option>
         </select>
+        <p class="text-slate-500 text-xs mt-1.5">Sono valute stabili: 1 USDC = 1$, 1 EURC = 1€. Il valore non oscilla.</p>
       </div>
       <div id="vault-target-row" class="mb-4 hidden">
-        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Cifra da raggiungere</label>
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Quanto vuoi raggiungere?</label>
         <input id="vault-target" type="number" min="1" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="es. 10000">
       </div>
       <div id="vault-date-row" class="mb-5">
-        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Data di Sblocco</label>
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Non aprire prima del</label>
         <input id="vault-date" type="date" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
       </div>
       <div id="vault-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-xl mb-4"></div>
-      <button onclick="App.createVault()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-semibold transition-colors">🔒 Crea e Congela</button>
+      <button onclick="App.createVault()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-semibold transition-colors">� Crea il mio salvadanaio</button>
     </div>
   </div>
 </div>
@@ -259,9 +259,11 @@
         <h3 class="text-xl font-bold" id="detail-title"></h3>
         <button onclick="App.closeModal('modal-vault-detail')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
+
+      <!-- Progress -->
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
         <div class="flex justify-between text-sm mb-2">
-          <span class="text-slate-400">Congelato</span>
+          <span class="text-slate-400">Messo da parte</span>
           <span class="font-semibold" id="detail-amount">0</span>
         </div>
         <div class="w-full bg-slate-700 rounded-full h-3 mb-2">
@@ -272,49 +274,65 @@
           <span>Obiettivo: <span id="detail-target">0</span></span>
         </div>
       </div>
+
+      <!-- Unlock status -->
       <div id="detail-unlock-box" class="bg-slate-900 rounded-2xl p-4 mb-4">
-        <p class="text-slate-400 text-xs mb-2 uppercase tracking-wider">Condizioni di Sblocco</p>
+        <p class="text-slate-400 text-xs mb-2 uppercase tracking-wider">Quando si apre</p>
         <div id="detail-unlock-status" class="text-center mb-2">
           <p class="text-3xl font-bold" id="detail-countdown">—</p>
         </div>
         <div id="detail-conditions" class="space-y-2 text-sm"></div>
         <p class="text-slate-400 text-xs mt-2 text-center" id="detail-unlock-date"></p>
       </div>
+
+      <!-- Chart -->
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
         <canvas id="vault-chart" height="90"></canvas>
       </div>
+
+      <!-- Deposit section -->
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
-        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Deposita</p>
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Aggiungi soldi</p>
         <div id="matic-warning" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs p-2 rounded-xl mb-2">
-          ⛽ MATIC basso per il gas. <button onclick="App.autoGetMatic()" class="underline font-semibold">Ottieni automaticamente</button>
+          ⛽ Servono pochi centesimi per la commissione. <button onclick="App.autoGetMatic()" class="underline font-semibold">Risolvilo automaticamente</button>
         </div>
         <div id="deposit-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded-xl mb-2"></div>
-        <div class="mb-2">
-          <label class="text-slate-500 text-xs mb-1 block">Deposita con</label>
-          <select id="deposit-src-token" onchange="App.onSrcTokenChange()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-            <option value="native">Stessa valuta del vault</option>
-          </select>
-        </div>
         <div class="flex gap-2 mb-2">
-          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="Importo" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
+          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="Quanto vuoi aggiungere?" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
           <button onclick="App.showCaveauLock()" id="deposit-lock-btn" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">🔒 Blocca</button>
         </div>
-        <div id="swap-quote-box" class="hidden bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 mb-2 text-xs text-blue-300">
-          💱 Riceverai circa <span id="swap-dest-amount" class="font-bold">—</span> <span id="swap-dest-symbol"></span>
-          <span class="text-blue-400/60 ml-1">(slippage max 1%)</span>
-        </div>
-        <div class="flex items-center gap-3 mt-1">
-          <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Manuale</button>
-          <span class="text-slate-700">·</span>
-          <button onclick="App.openCrossChainModal()" class="text-purple-400 hover:text-purple-300 text-xs transition-colors font-medium">🌐 Da Bitcoin/Ethereum/altra rete</button>
-        </div>
+
+        <!-- Advanced deposit options (collapsed by default) -->
+        <details class="mt-3">
+          <summary class="text-slate-500 text-xs cursor-pointer hover:text-slate-300 transition-colors select-none">⚙️ Opzioni avanzate</summary>
+          <div class="mt-3 space-y-2 pt-2 border-t border-slate-700/50">
+            <div>
+              <label class="text-slate-500 text-xs mb-1 block">Deposita con un'altra valuta</label>
+              <select id="deposit-src-token" onchange="App.onSrcTokenChange()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <option value="native">Stessa valuta del salvadanaio</option>
+              </select>
+              <p class="text-slate-600 text-xs mt-1">Converte automaticamente qualsiasi valuta.</p>
+            </div>
+            <div id="swap-quote-box" class="hidden bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 text-xs text-blue-300">
+              💱 Riceverai circa <span id="swap-dest-amount" class="font-bold">—</span> <span id="swap-dest-symbol"></span>
+              <span class="text-blue-400/60 ml-1">(differenza max 1%)</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Solo nota manuale</button>
+              <span class="text-slate-700">·</span>
+              <button onclick="App.openCrossChainModal()" class="text-purple-400 hover:text-purple-300 text-xs transition-colors font-medium">🌐 Da Bitcoin / Ethereum</button>
+            </div>
+          </div>
+        </details>
       </div>
+
+      <!-- Transactions -->
       <div class="mb-4">
-        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Registro Transazioni</p>
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Storico versamenti</p>
         <div id="detail-transactions" class="space-y-2"></div>
       </div>
       <div class="pt-4 border-t border-slate-700 text-center">
-        <button onclick="App.panicButton()" class="text-red-500/40 hover:text-red-400 text-xs transition-colors">🚫 Tentativo di prelievo anticipato</button>
+        <button onclick="App.panicButton()" class="text-red-500/40 hover:text-red-400 text-xs transition-colors">🚫 Voglio ritirare prima</button>
       </div>
     </div>
   </div>
@@ -323,12 +341,12 @@
 <!-- MODAL: PANIC -->
 <div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" onclick="App.closeModal('modal-panic')">
   <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in" onclick="event.stopPropagation()">
-    <div class="text-6xl mb-4">🚫</div>
-    <h3 class="text-2xl font-bold text-red-400 mb-2">ACCESSO NEGATO</h3>
-    <p class="text-slate-300 mb-2">La matematica non ha sentimenti.</p>
-    <p class="text-slate-400 text-sm mb-4 leading-relaxed">Il codice di blocco risponde con <code class="text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">REVERT</code> a ogni tentativo di prelievo anticipato.</p>
+    <div class="text-6xl mb-4">�🔒</div>
+    <h3 class="text-2xl font-bold text-red-400 mb-2">Non si può aprire!</h3>
+    <p class="text-slate-300 mb-2">Questo è esattamente il punto.</p>
+    <p class="text-slate-400 text-sm mb-4 leading-relaxed">I tuoi soldi sono bloccati e <strong class="text-white">nessuno</strong> può toccarli prima della scadenza — nemmeno tu, nemmeno noi. È così che funziona il salvadanaio blindato.</p>
     <p class="text-white font-semibold mb-6" id="panic-date"></p>
-    <button onclick="App.closeModal('modal-panic')" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl font-medium w-full transition-colors">Torna al tuo Caveau</button>
+    <button onclick="App.closeModal('modal-panic')" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl font-medium w-full transition-colors">Ho capito, torno indietro</button>
   </div>
 </div>
 
@@ -337,21 +355,27 @@
   <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold">Impostazioni & Sicurezza</h3>
+        <h3 class="text-xl font-bold">⚙️ Impostazioni</h3>
         <button onclick="App.closeModal('modal-settings')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
       <div class="space-y-3">
         <div class="bg-slate-900 rounded-xl p-4">
-          <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Portafoglio</p>
+          <p class="text-slate-400 text-xs uppercase tracking-wider mb-1">Il tuo indirizzo</p>
           <p class="font-mono text-xs break-all" id="settings-address">—</p>
+          <p class="text-slate-600 text-xs mt-1">Come un IBAN, ma per le crypto. Puoi condividerlo.</p>
         </div>
-        <button onclick="App.showSeedPhrase()" class="w-full bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 py-3 rounded-xl text-sm font-medium transition-colors">🔑 Mostra Seed Phrase</button>
-        <a id="polygonscan-link" href="#" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-3 rounded-xl text-sm font-medium transition-colors">🔎 Verifica su PolygonScan</a>
-        <a href="https://github.com/creazionecontenuti-oss/caveau-digitale" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-3 rounded-xl text-sm font-medium transition-colors">📂 Codice Sorgente (GitHub)</a>
-        <a href="https://bafybeihulskwibpzkpc27vbuksfypc7vvw26iipmapmcyhz6pl37jp3uwm.ipfs.dweb.link/caveau-digitale/" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-3 rounded-xl text-sm font-medium transition-colors">🐙 Versione IPFS (Indistruttibile)</a>
-        <button onclick="App.confirmDeleteWallet()" class="w-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 py-3 rounded-xl text-sm font-medium transition-colors">🗑️ Cancella da Questo Dispositivo</button>
+        <button onclick="App.showSeedPhrase()" class="w-full bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-400 py-3 rounded-xl text-sm font-medium transition-colors">🔑 Mostra le 12 parole segrete</button>
+        <a id="polygonscan-link" href="#" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-3 rounded-xl text-sm font-medium transition-colors">🔎 Vedi i miei movimenti</a>
+        <details class="bg-slate-900 rounded-xl">
+          <summary class="text-slate-400 text-xs px-4 py-3 cursor-pointer hover:text-slate-300">🔧 Per sviluppatori</summary>
+          <div class="px-4 pb-3 space-y-2">
+            <a href="https://github.com/creazionecontenuti-oss/caveau-digitale" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-2.5 rounded-xl text-xs font-medium transition-colors">📂 Codice sorgente (GitHub)</a>
+            <a href="https://QmVuCCjht978egtuzF2MVBbjPgTVYm2sBy3BMFDFn3b4up.ipfs.dweb.link/caveau-digitale/" target="_blank" class="block w-full bg-slate-700 hover:bg-slate-600 text-center text-white py-2.5 rounded-xl text-xs font-medium transition-colors">🌐 Versione permanente (IPFS)</a>
+          </div>
+        </details>
+        <button onclick="App.confirmDeleteWallet()" class="w-full bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 py-3 rounded-xl text-sm font-medium transition-colors">🗑️ Esci e cancella da questo dispositivo</button>
       </div>
-      <p class="text-slate-600 text-xs mt-4 text-center">Caveau Digitale v1.0 • Non-Custodial • Open Source • IPFS</p>
+      <p class="text-slate-600 text-xs mt-4 text-center">PiggyVault v2.0 • I tuoi soldi, le tue regole</p>
     </div>
   </div>
 </div>
@@ -360,12 +384,12 @@
 <div id="modal-show-seed" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="App.closeModal('modal-show-seed')">
   <div class="bg-slate-900 border border-amber-500/30 rounded-3xl w-full max-w-md p-6" onclick="event.stopPropagation()">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-bold text-amber-400">⚠️ Seed Phrase</h3>
+      <h3 class="text-xl font-bold text-amber-400">🔑 Le tue parole segrete</h3>
       <button onclick="App.closeModal('modal-show-seed')" class="text-slate-400 hover:text-white text-2xl">×</button>
     </div>
-    <p class="text-slate-400 text-sm mb-4">Non mostrare questo schermo a nessuno.</p>
+    <p class="text-slate-400 text-sm mb-4">Non mostrare queste parole a nessuno. Chi le ha può accedere ai tuoi soldi.</p>
     <div id="show-seed-grid" class="grid grid-cols-3 gap-2 mb-5"></div>
-    <button onclick="App.copySeedPhrase()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">📋 Copia negli appunti</button>
+    <button onclick="App.copySeedPhrase()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">📋 Copia le parole</button>
   </div>
 </div>
 
@@ -375,8 +399,8 @@
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
         <div>
-          <h3 class="text-xl font-bold">💳 Acquista USDC</h3>
-          <p class="text-slate-400 text-xs mt-0.5" id="onramp-subtitle">Quanti euro vuoi convertire?</p>
+          <h3 class="text-xl font-bold">💳 Aggiungi soldi</h3>
+          <p class="text-slate-400 text-xs mt-0.5" id="onramp-subtitle">Quanto vuoi mettere nel tuo salvadanaio?</p>
         </div>
         <button onclick="App.closeModal('modal-onramp')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
@@ -412,7 +436,7 @@
             <span id="onramp-copied" class="hidden text-green-400 text-xs ml-2">✅</span>
           </div>
         </div>
-        <p class="text-slate-500 text-xs mb-3">Indirizzo e importo sono già precompilati — scegli dove pagare:</p>
+        <p class="text-slate-500 text-xs mb-3">Scegli come vuoi pagare. L'importo arriverà automaticamente nel tuo salvadanaio:</p>
         <div class="space-y-2">
           <button onclick="App.openMtPelerin()" class="w-full flex items-center justify-between bg-emerald-600/15 hover:bg-emerald-600/25 border border-emerald-500/40 px-4 py-3 rounded-xl transition-colors">
             <div class="text-left"><p class="font-semibold text-sm">🇨🇭 Mt Pelerin <span class="text-emerald-400 text-xs font-normal ml-1">consigliato</span></p><p class="text-slate-400 text-xs">Bonifico SEPA · no KYC fino a 1000€ · svizzero</p></div>
@@ -469,10 +493,10 @@
   <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold">🌐 Deposita da altra rete</h3>
+        <h3 class="text-xl font-bold">🌐 Deposita da un'altra valuta</h3>
         <button onclick="App.closeCrossChain()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
-      <p class="text-slate-400 text-xs mb-4">Manda crypto da qualsiasi blockchain. Arriveranno automaticamente come <span id="cc-dest-currency" class="font-bold text-white">USDC</span> nel tuo vault su Polygon.</p>
+      <p class="text-slate-400 text-xs mb-4">Hai Bitcoin, Ethereum o altre crypto? Inviale qui e arriveranno automaticamente come <span id="cc-dest-currency" class="font-bold text-white">dollari digitali</span> nel tuo salvadanaio.</p>
       <div id="cc-step-select" class="">
         <label class="text-slate-500 text-xs mb-2 block uppercase tracking-wider">Scegli la crypto da inviare</label>
         <div id="cc-coin-grid" class="grid grid-cols-2 gap-2 mb-4"></div>
@@ -503,29 +527,29 @@
   <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold">🔒 Blocca nel Caveau</h3>
+        <h3 class="text-xl font-bold">🔒 Conferma il blocco</h3>
         <button onclick="App.closeModal('modal-caveau-lock')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
       <div class="bg-slate-900 rounded-2xl p-4 mb-4 space-y-2.5">
         <div class="flex justify-between text-sm"><span class="text-slate-400">Salvadanaio</span><span class="font-medium" id="lock-vault-name"></span></div>
-        <div class="flex justify-between text-sm"><span class="text-slate-400">Importo</span><span class="font-bold text-blue-400" id="lock-amount"></span></div>
-        <div class="flex justify-between text-sm" id="lock-date-row"><span class="text-slate-400">Sblocco il</span><span class="font-medium" id="lock-date"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Quanto blocchi</span><span class="font-bold text-blue-400" id="lock-amount"></span></div>
+        <div class="flex justify-between text-sm" id="lock-date-row"><span class="text-slate-400">Si apre il</span><span class="font-medium" id="lock-date"></span></div>
         <div class="flex justify-between text-sm" id="lock-target-row"><span class="text-slate-400">Obiettivo</span><span class="font-medium" id="lock-target"></span></div>
-        <div class="flex justify-between text-sm"><span class="text-slate-400">Modalità</span><span class="font-medium text-xs" id="lock-mode"></span></div>
-        <div class="flex justify-between text-sm"><span class="text-slate-400">Wallet</span><span class="font-mono text-xs text-slate-300" id="lock-address"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Tipo</span><span class="font-medium text-xs" id="lock-mode"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Account</span><span class="font-mono text-xs text-slate-300" id="lock-address"></span></div>
         <div class="flex justify-between text-sm border-t border-slate-700 pt-2">
-          <span class="text-slate-400">Saldo</span>
+          <span class="text-slate-400">Saldo disponibile</span>
           <span id="lock-balance" class="text-slate-400 text-sm">Caricamento...</span>
         </div>
       </div>
       <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-4">
-        <p class="text-amber-400 text-xs font-semibold mb-1">⚠️ Operazione Irreversibile</p>
-        <p class="text-amber-300/70 text-xs">I fondi saranno matematicamente bloccati dallo smart contract. Nessuno può sbloccarli prima che le condizioni siano soddisfatte.</p>
+        <p class="text-amber-400 text-xs font-semibold mb-1">⚠️ Non si può annullare</p>
+        <p class="text-amber-300/70 text-xs">Una volta confermato, questi soldi saranno bloccati fino alla scadenza. Nessuno potrà ritirarli prima — nemmeno tu.</p>
       </div>
       <div id="lock-status" class="text-sm min-h-[20px]"></div>
       <div class="space-y-2 mt-4">
-        <button id="lock-execute-btn" onclick="App.executeCaveauLock()" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 py-4 rounded-xl font-semibold transition-colors">🔒 Esegui Blocco</button>
-        <button onclick="App.closeModal('modal-caveau-lock')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Annulla</button>
+        <button id="lock-execute-btn" onclick="App.executeCaveauLock()" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 py-4 rounded-xl font-semibold transition-colors">🔒 Blocca i soldi</button>
+        <button onclick="App.closeModal('modal-caveau-lock')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Ci devo pensare</button>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 // Caveau Digitale — Service Worker (auto-update v5)
-const CACHE_VERSION = 'caveau-v5-20260228b';
+const CACHE_VERSION = 'piggy-v6-20260228a';
 const CORE_ASSETS = ['/', '/index.html', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', e => {
