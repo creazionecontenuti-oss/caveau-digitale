@@ -4,5 +4,7 @@ node_modules/
 windsurf_deployment.yaml
 .vercel
 .env
+.pinata.secrets.env
+status.md
 cache/
 artifacts/

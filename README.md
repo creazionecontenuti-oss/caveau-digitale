@@ -6,7 +6,7 @@ Una PWA (Progressive Web App) non-custodial che trasforma la forza di volontà i
 
 **🌐 Demo live:** [piggyvault.xyz](https://piggyvault.xyz) · [caveau-digitale.vercel.app](https://caveau-digitale.vercel.app)
 
-**🐙 IPFS (permanente):** [dweb.link](https://bafybeihulskwibpzkpc27vbuksfypc7vvw26iipmapmcyhz6pl37jp3uwm.ipfs.dweb.link/caveau-digitale/) · CID: `bafybeihulskwibpzkpc27vbuksfypc7vvw26iipmapmcyhz6pl37jp3uwm`
+**🐙 IPFS (permanente):** [dweb.link](https://QmfW62wH7TTsKhmafWNv3y1GqngGtbq6FswoAkr3uTRfnn.ipfs.dweb.link/caveau-digitale/) · CID: `QmfW62wH7TTsKhmafWNv3y1GqngGtbq6FswoAkr3uTRfnn`
 
 ---
 
@@ -40,8 +40,10 @@ Nessun server  •  Nessun database  •  Nessun intermediario
 | Crittografia | Web Crypto API (PBKDF2 + AES-GCM) | Cifratura locale dei dati |
 | Persistenza | localStorage (cifrato) | Nessun dato sui server |
 | Grafici | Chart.js | Visualizzazione progressi |
-| Time-Lock | Sablier V2 / Polygon | Smart Contract inviolabile |
-| Hosting | Vercel / IPFS | Deploy statico, zero costi |
+| Smart Contract | CaveauDigitale.sol / Polygon | 4 modalità sblocco (data/importo/OR/AND) |
+| Auto-Swap | Paraswap API v5 | Qualsiasi ERC-20 → valuta vault |
+| Cross-Chain | SideShift API v2 | BTC/ETH/SOL/LTC/DOGE → USDC Polygon |
+| Hosting | Vercel / IPFS (Pinata) | Deploy statico, zero costi |
 
 ## Sicurezza
 
@@ -55,7 +57,7 @@ Nessun server  •  Nessun database  •  Nessun intermediario
 
 1. **Prima apertura**: Crea un nuovo portafoglio → scrivi le 12 parole su carta → imposta PIN
 2. **Crea un vincolo**: Scegli obiettivo, importo target, valuta stabile (USDC/EURC/DAI), data sblocco
-3. **Blocca i fondi**: Esegui l'operazione su [Sablier](https://sablier.com) su rete Polygon
+3. **Blocca i fondi**: Deposita direttamente, swappa qualsiasi token, o invia da Bitcoin/Ethereum
 4. **Registra**: Inserisci nell'app l'importo versato → i grafici si aggiornano
 5. **Aspetta**: Il countdown scende. La matematica fa il resto.
 
@@ -86,9 +88,13 @@ vercel --prod
 
 ## Roadmap
 
-- [ ] Integrazione diretta Sablier V2 (firma on-chain dall'app)
+- [x] Smart Contract CaveauDigitale con 4 modalità sblocco
+- [x] Auto-Swap qualsiasi token → valuta vault (Paraswap)
+- [x] Depositi cross-chain BTC/ETH/SOL/LTC/DOGE (SideShift)
+- [x] Auto-MATIC per gas con un click
+- [x] Deploy su IPFS via Pinata
 - [ ] Widget fiat on-ramp (Mt Pelerin / Transak) — bonifico → USDC automatico
-- [ ] Deploy su IPFS per hosting completamente decentralizzato
+- [ ] Account Abstraction (ERC-4337) per gasless nativo
 - [ ] Supporto multi-chain (Base, Arbitrum)
 - [ ] Notifiche push per avvicinarsi alla data di sblocco
 
