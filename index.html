@@ -534,18 +534,26 @@
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').then(reg => {
-      // Check for updates every 30 minutes
-      setInterval(() => reg.update(), 30 * 60 * 1000);
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
+      // Check immediately, then every 5 minutes
+      reg.update();
+      setInterval(() => reg.update(), 5 * 60 * 1000);
+      // Detect waiting SW and force activate
+      reg.addEventListener('updatefound', () => {
+        const newSW = reg.installing;
+        if (newSW) {
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'activated') {
+              window.location.reload();
+            }
+          });
+        }
+      });
     }).catch(() => {});
-    // Listen for SW update message
+    // Listen for SW update message (backup notification)
     navigator.serviceWorker.addEventListener('message', e => {
       if (e.data?.type === 'SW_UPDATED') {
-        const toast = document.createElement('div');
-        toast.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-5 py-3 rounded-2xl shadow-xl z-[9999] text-sm font-medium flex items-center gap-3';
-        toast.innerHTML = '🔄 Aggiornamento disponibile <button onclick="location.reload()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg text-xs font-bold">Aggiorna</button>';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 15000);
+        console.log('[PWA] Aggiornato a:', e.data.version);
       }
     });
   }
