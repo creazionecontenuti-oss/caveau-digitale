@@ -3,3 +3,6 @@
 node_modules/
 windsurf_deployment.yaml
 .vercel
+.env
+cache/
+artifacts/

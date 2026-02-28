@@ -218,22 +218,30 @@
         <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Nome</label>
         <input id="vault-name" type="text" maxlength="30" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="es. Vacanze a Ibiza">
       </div>
-      <div class="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Obiettivo</label>
-          <input id="vault-target" type="number" min="1" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="11000">
+      <div class="mb-4">
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Quando si sblocca?</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="App.setUnlockMode(0)" id="mode-btn-0" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-blue-500 bg-blue-500/15 text-blue-400 transition-all">📅 Solo Data</button>
+          <button type="button" onclick="App.setUnlockMode(1)" id="mode-btn-1" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">💰 Solo Importo</button>
+          <button type="button" onclick="App.setUnlockMode(2)" id="mode-btn-2" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅o💰 Primo che arriva</button>
+          <button type="button" onclick="App.setUnlockMode(3)" id="mode-btn-3" class="unlock-mode-btn py-2.5 rounded-xl text-xs font-semibold border-2 border-slate-700 text-slate-400 transition-all">📅+💰 Entrambi</button>
         </div>
-        <div>
-          <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Valuta</label>
-          <select id="vault-currency" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
-            <option value="USDC">USDC</option>
-            <option value="EURC">EURC</option>
-            <option value="DAI">DAI</option>
-            <option value="USDT">USDT</option>
-          </select>
-        </div>
+        <p id="mode-hint" class="text-slate-500 text-xs mt-2">Si sblocca quando arriva la data scelta.</p>
       </div>
-      <div class="mb-5">
+      <div class="mb-4">
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Valuta</label>
+        <select id="vault-currency" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+          <option value="USDC">USDC</option>
+          <option value="EURC">EURC</option>
+          <option value="DAI">DAI</option>
+          <option value="USDT">USDT</option>
+        </select>
+      </div>
+      <div id="vault-target-row" class="mb-4 hidden">
+        <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Cifra da raggiungere</label>
+        <input id="vault-target" type="number" min="1" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500" placeholder="es. 10000">
+      </div>
+      <div id="vault-date-row" class="mb-5">
         <label class="text-slate-400 text-xs uppercase tracking-wider mb-2 block">Data di Sblocco</label>
         <input id="vault-date" type="date" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
       </div>
@@ -264,22 +272,42 @@
           <span>Obiettivo: <span id="detail-target">0</span></span>
         </div>
       </div>
-      <div class="bg-slate-900 rounded-2xl p-4 mb-4 text-center">
-        <p class="text-slate-400 text-xs mb-1">SBLOCCO TRA</p>
-        <p class="text-3xl font-bold" id="detail-countdown">—</p>
-        <p class="text-slate-400 text-sm mt-1" id="detail-unlock-date"></p>
+      <div id="detail-unlock-box" class="bg-slate-900 rounded-2xl p-4 mb-4">
+        <p class="text-slate-400 text-xs mb-2 uppercase tracking-wider">Condizioni di Sblocco</p>
+        <div id="detail-unlock-status" class="text-center mb-2">
+          <p class="text-3xl font-bold" id="detail-countdown">—</p>
+        </div>
+        <div id="detail-conditions" class="space-y-2 text-sm"></div>
+        <p class="text-slate-400 text-xs mt-2 text-center" id="detail-unlock-date"></p>
       </div>
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
         <canvas id="vault-chart" height="90"></canvas>
       </div>
       <div class="bg-slate-900 rounded-2xl p-4 mb-4">
-        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Blocca Fondi su Polygon</p>
-        <div id="deposit-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded-xl mb-2"></div>
-        <div class="flex gap-2 mb-2">
-          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="500" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
-          <button onclick="App.showSablierLock()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">🔒 Blocca</button>
+        <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Deposita</p>
+        <div id="matic-warning" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs p-2 rounded-xl mb-2">
+          ⛽ MATIC basso per il gas. <button onclick="App.autoGetMatic()" class="underline font-semibold">Ottieni automaticamente</button>
         </div>
-        <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Registra manualmente (senza blockchain)</button>
+        <div id="deposit-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded-xl mb-2"></div>
+        <div class="mb-2">
+          <label class="text-slate-500 text-xs mb-1 block">Deposita con</label>
+          <select id="deposit-src-token" onchange="App.onSrcTokenChange()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+            <option value="native">Stessa valuta del vault</option>
+          </select>
+        </div>
+        <div class="flex gap-2 mb-2">
+          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="Importo" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
+          <button onclick="App.showCaveauLock()" id="deposit-lock-btn" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">🔒 Blocca</button>
+        </div>
+        <div id="swap-quote-box" class="hidden bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 mb-2 text-xs text-blue-300">
+          💱 Riceverai circa <span id="swap-dest-amount" class="font-bold">—</span> <span id="swap-dest-symbol"></span>
+          <span class="text-blue-400/60 ml-1">(slippage max 1%)</span>
+        </div>
+        <div class="flex items-center gap-3 mt-1">
+          <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Manuale</button>
+          <span class="text-slate-700">·</span>
+          <button onclick="App.openCrossChainModal()" class="text-purple-400 hover:text-purple-300 text-xs transition-colors font-medium">🌐 Da Bitcoin/Ethereum/altra rete</button>
+        </div>
       </div>
       <div class="mb-4">
         <p class="text-slate-400 text-xs uppercase tracking-wider mb-3">Registro Transazioni</p>
@@ -436,18 +464,54 @@
   </div>
 </div>
 
-<!-- MODAL: SABLIER LOCK -->
-<div id="modal-sablier-lock" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-sablier-lock')">
+<!-- MODAL: CROSS-CHAIN DEPOSIT -->
+<div id="modal-crosschain" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-crosschain')">
   <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="flex justify-between items-center mb-5">
-        <h3 class="text-xl font-bold">🔒 Blocca su Sablier</h3>
-        <button onclick="App.closeModal('modal-sablier-lock')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+        <h3 class="text-xl font-bold">🌐 Deposita da altra rete</h3>
+        <button onclick="App.closeCrossChain()" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
+      </div>
+      <p class="text-slate-400 text-xs mb-4">Manda crypto da qualsiasi blockchain. Arriveranno automaticamente come <span id="cc-dest-currency" class="font-bold text-white">USDC</span> nel tuo vault su Polygon.</p>
+      <div id="cc-step-select" class="">
+        <label class="text-slate-500 text-xs mb-2 block uppercase tracking-wider">Scegli la crypto da inviare</label>
+        <div id="cc-coin-grid" class="grid grid-cols-2 gap-2 mb-4"></div>
+      </div>
+      <div id="cc-step-address" class="hidden">
+        <div class="bg-slate-900 rounded-2xl p-4 mb-3">
+          <div class="flex justify-between text-sm mb-2"><span class="text-slate-400">Invii</span><span class="font-medium" id="cc-send-coin"></span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-400">Ricevi</span><span class="font-medium text-green-400" id="cc-receive-coin"></span></div>
+        </div>
+        <div class="bg-slate-900 rounded-2xl p-4 mb-3 text-center">
+          <p class="text-slate-400 text-xs mb-2 uppercase tracking-wider">Manda a questo indirizzo</p>
+          <p class="font-mono text-sm text-white break-all select-all bg-slate-800 p-3 rounded-xl" id="cc-deposit-address">—</p>
+          <button onclick="App.copyCCAddress()" class="text-blue-400 hover:text-blue-300 text-xs mt-2 transition-colors">📋 Copia indirizzo</button>
+        </div>
+        <div id="cc-limits" class="text-xs text-slate-500 mb-3 text-center"></div>
+        <div class="bg-slate-900 rounded-2xl p-4 mb-3">
+          <p class="text-slate-400 text-xs mb-1">Stato</p>
+          <p id="cc-status" class="text-sm font-medium text-yellow-400">⏳ In attesa del deposito...</p>
+        </div>
+        <button onclick="App.closeCrossChain()" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Chiudi</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CAVEAU LOCK -->
+<div id="modal-caveau-lock" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-end md:items-center justify-center p-4" onclick="App.closeModal('modal-caveau-lock')">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-slate-600" onclick="event.stopPropagation()">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-xl font-bold">🔒 Blocca nel Caveau</h3>
+        <button onclick="App.closeModal('modal-caveau-lock')" class="text-slate-400 hover:text-white text-2xl leading-none">×</button>
       </div>
       <div class="bg-slate-900 rounded-2xl p-4 mb-4 space-y-2.5">
         <div class="flex justify-between text-sm"><span class="text-slate-400">Salvadanaio</span><span class="font-medium" id="lock-vault-name"></span></div>
         <div class="flex justify-between text-sm"><span class="text-slate-400">Importo</span><span class="font-bold text-blue-400" id="lock-amount"></span></div>
-        <div class="flex justify-between text-sm"><span class="text-slate-400">Sblocco il</span><span class="font-medium" id="lock-date"></span></div>
+        <div class="flex justify-between text-sm" id="lock-date-row"><span class="text-slate-400">Sblocco il</span><span class="font-medium" id="lock-date"></span></div>
+        <div class="flex justify-between text-sm" id="lock-target-row"><span class="text-slate-400">Obiettivo</span><span class="font-medium" id="lock-target"></span></div>
+        <div class="flex justify-between text-sm"><span class="text-slate-400">Modalità</span><span class="font-medium text-xs" id="lock-mode"></span></div>
         <div class="flex justify-between text-sm"><span class="text-slate-400">Wallet</span><span class="font-mono text-xs text-slate-300" id="lock-address"></span></div>
         <div class="flex justify-between text-sm border-t border-slate-700 pt-2">
           <span class="text-slate-400">Saldo</span>
@@ -456,12 +520,12 @@
       </div>
       <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-4">
         <p class="text-amber-400 text-xs font-semibold mb-1">⚠️ Operazione Irreversibile</p>
-        <p class="text-amber-300/70 text-xs">I fondi saranno matematicamente bloccati fino alla data impostata. Lo smart contract rifiuta qualsiasi prelievo anticipato.</p>
+        <p class="text-amber-300/70 text-xs">I fondi saranno matematicamente bloccati dallo smart contract. Nessuno può sbloccarli prima che le condizioni siano soddisfatte.</p>
       </div>
       <div id="lock-status" class="text-sm min-h-[20px]"></div>
       <div class="space-y-2 mt-4">
-        <button id="lock-execute-btn" onclick="App.executeSablierLock()" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 py-4 rounded-xl font-semibold transition-colors">🔒 Esegui Blocco</button>
-        <button onclick="App.closeModal('modal-sablier-lock')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Annulla</button>
+        <button id="lock-execute-btn" onclick="App.executeCaveauLock()" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 py-4 rounded-xl font-semibold transition-colors">🔒 Esegui Blocco</button>
+        <button onclick="App.closeModal('modal-caveau-lock')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl text-sm font-medium transition-colors">Annulla</button>
       </div>
     </div>
   </div>
