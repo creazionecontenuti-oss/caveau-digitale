@@ -392,9 +392,10 @@ App.openOnramp = function() {
   _onramp.amount = 0;
   document.getElementById('onramp-step1').classList.remove('hidden');
   document.getElementById('onramp-step2').classList.add('hidden');
-  document.getElementById('onramp-subtitle').textContent = 'Quanti euro vuoi convertire?';
+  document.getElementById('onramp-subtitle').textContent = 'Scegli quanto vuoi aggiungere al tuo saldo.';
   document.getElementById('onramp-amount-input').value = '';
   document.querySelectorAll('.onramp-preset').forEach(b => b.classList.remove('bg-blue-600','border-blue-500'));
+  document.getElementById('onramp-refresh-msg')?.classList.add('hidden');
   App.openModal('modal-onramp');
 };
 
@@ -423,17 +424,34 @@ App.onrampNext = function() {
   document.getElementById('onramp-qr').src =
     `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addr)}&margin=0`;
   const label = `→ ${amt}€`;
-  ['onramp-label-mtpelerin','onramp-label-guardarian','onramp-label-moonpay','onramp-label-transak']
+  ['onramp-label-mtpelerin','onramp-label-guardarian','onramp-label-moonpay']
     .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = label; });
-  document.getElementById('onramp-subtitle').textContent = `Stai acquistando ~${amt} USDC`;
+  document.getElementById('onramp-subtitle').textContent = `Aggiungi circa ${amt}€ al tuo saldo`;
   document.getElementById('onramp-step1').classList.add('hidden');
   document.getElementById('onramp-step2').classList.remove('hidden');
+  document.getElementById('onramp-refresh-msg')?.classList.add('hidden');
 };
 
 App.onrampBack = function() {
   document.getElementById('onramp-step1').classList.remove('hidden');
   document.getElementById('onramp-step2').classList.add('hidden');
-  document.getElementById('onramp-subtitle').textContent = 'Quanti euro vuoi convertire?';
+  document.getElementById('onramp-subtitle').textContent = 'Scegli quanto vuoi aggiungere al tuo saldo.';
+};
+
+App.refreshAfterOnramp = async function() {
+  const msg = document.getElementById('onramp-refresh-msg');
+  if (!msg) return;
+  msg.classList.remove('hidden');
+  msg.textContent = 'Controllo saldo in corso...';
+  try {
+    await renderDashboard();
+    const hasFunds = state.vaults.some(v => vaultTotal(v) > 0);
+    msg.textContent = hasFunds
+      ? 'Perfetto! Sembra che i fondi siano arrivati.'
+      : 'Se il saldo e ancora 0, aspetta qualche minuto e riprova.';
+  } catch {
+    msg.textContent = 'Non riesco a verificare ora. Riprova tra poco.';
+  }
 };
 
 App.copyOnrampAddress = function() {
@@ -444,13 +462,13 @@ App.copyOnrampAddress = function() {
 
 App.openMtPelerin = function() {
   const url = new URL('https://widget.mtpelerin.com/');
+  url.searchParams.set('_ctkn', 'bb3ca0be-83a5-42a7-8e4f-5cb08892caf2');
   url.searchParams.set('lang', 'it');
   url.searchParams.set('tab', 'buy');
-  url.searchParams.set('net', 'matic_mainnet');
-  url.searchParams.set('bsc', 'USDC');
-  url.searchParams.set('rfr', 'sJ71NPhD');
-  url.searchParams.set('code', 'bec6626e-8913-497d-9835-6e6ae9edb144');
-  if (_onramp.amount) url.searchParams.set('amt', _onramp.amount);
+  url.searchParams.set('bsc', 'EUR');
+  url.searchParams.set('bdc', 'USDC');
+  url.searchParams.set('dnet', 'matic_mainnet');
+  if (_onramp.amount) url.searchParams.set('bsa', _onramp.amount);
   if (state.address) url.searchParams.set('addr', state.address);
   window.open(url.toString(), '_blank');
 };
@@ -473,16 +491,7 @@ App.openMoonpay = function() {
 };
 
 App.openTransak = function() {
-  const url = new URL('https://global.transak.com/');
-  url.searchParams.set('apiKey', 'd16ab573-f9d8-44b1-90ed-f3685670674d');
-  url.searchParams.set('defaultCryptoCurrency', 'USDC');
-  url.searchParams.set('network', 'polygon');
-  url.searchParams.set('colorMode', 'DARK');
-  url.searchParams.set('fiatCurrency', 'EUR');
-  url.searchParams.set('disableWalletAddressForm', 'true');
-  if (_onramp.amount) url.searchParams.set('fiatAmount', _onramp.amount);
-  if (state.address) url.searchParams.set('walletAddress', state.address);
-  window.open(url.toString(), '_blank');
+  window.open('https://global.transak.com/', '_blank');
 };
 
 function renderDashboard() {
@@ -490,6 +499,11 @@ function renderDashboard() {
   const total = vaults.reduce((s, v) => s + vaultTotal(v), 0);
   document.getElementById('stat-total').textContent = total.toFixed(2);
   document.getElementById('stat-vaults').textContent = vaults.length;
+  const beginnerBanner = document.getElementById('beginner-start-banner');
+  if (beginnerBanner) {
+    if (total <= 0) beginnerBanner.classList.remove('hidden');
+    else beginnerBanner.classList.add('hidden');
+  }
 
   const locked = vaults.filter(v => !isVaultUnlocked(v));
   if (locked.length) {
