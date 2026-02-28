@@ -57,13 +57,13 @@ const SWAP_TOKENS = [
 // ─── Cross-Chain Config (SideShift) ─────────────────────────
 const SIDESHIFT_API = 'https://sideshift.ai/api/v2';
 const CROSS_CHAINS = [
-  { symbol: 'BTC',  network: 'bitcoin',    label: 'Bitcoin',          method: 'btc' },
-  { symbol: 'ETH',  network: 'ethereum',   label: 'Ethereum (ETH)',   method: 'eth' },
-  { symbol: 'SOL',  network: 'solana',     label: 'Solana (SOL)',     method: 'sol' },
-  { symbol: 'USDT', network: 'tron',       label: 'USDT (Tron/TRC20)',method: 'usdttron' },
-  { symbol: 'USDC', network: 'ethereum',   label: 'USDC (Ethereum)',  method: 'usdceth' },
-  { symbol: 'LTC',  network: 'litecoin',   label: 'Litecoin',        method: 'ltc' },
-  { symbol: 'DOGE', network: 'dogecoin',   label: 'Dogecoin',        method: 'doge' },
+  { symbol: 'BTC',  network: 'bitcoin',  label: 'Bitcoin',   icon: '₿', method: 'btc' },
+  { symbol: 'ETH',  network: 'ethereum', label: 'Ethereum',  icon: 'Ξ', method: 'eth' },
+  { symbol: 'SOL',  network: 'solana',   label: 'Solana',    icon: '◎', method: 'sol' },
+  { symbol: 'LTC',  network: 'litecoin', label: 'Litecoin',  icon: 'Ł', method: 'ltc' },
+  { symbol: 'DOGE', network: 'dogecoin', label: 'Dogecoin',  icon: '🐕', method: 'doge' },
+  { symbol: 'USDT', network: 'tron',     label: 'USDT',      icon: '💲', method: 'usdttron' },
+  { symbol: 'USDC', network: 'ethereum', label: 'USDC',      icon: '💵', method: 'usdceth' },
 ];
 const SETTLE_METHODS = { USDC: 'usdcpolygon', USDT: 'usdtpolygon', DAI: 'daipolygon', EURC: 'eurcpolygon' };
 
@@ -728,22 +728,65 @@ function renderVaultDetail(vault) {
   renderTxList(vault);
   renderVaultChart(vault);
 
-  // Populate source token dropdown for auto-swap
+  // ── Setup payment method chips ──
+  const vaultCur = vault.currency;
+  const currencyNames = { USDC: 'Dollari', EURC: 'Euro', DAI: 'Dollari', USDT: 'Dollari' };
+  const directLabel = document.getElementById('pay-direct-label');
+  if (directLabel) directLabel.textContent = currencyNames[vaultCur] || vaultCur;
+  const autoDest = document.getElementById('pay-auto-dest');
+  if (autoDest) autoDest.textContent = (currencyNames[vaultCur] || vaultCur).toLowerCase() + ' digitali';
+
+  // Populate "more" grid: remaining cross-chain coins + on-chain wallet tokens
+  const moreGrid = document.getElementById('pay-more-grid');
+  if (moreGrid) {
+    const extraCC = CROSS_CHAINS.filter(c => c.symbol !== 'BTC' && c.symbol !== 'ETH');
+    const walletTokens = SWAP_TOKENS.filter(t => t.symbol !== 'MATIC');
+    let html = extraCC.map(c =>
+      `<button onclick="App.selectPayMethod('cc:${c.symbol}')" class="pay-chip flex flex-col items-center gap-0.5 bg-slate-800 border-2 border-slate-700 hover:border-blue-500/50 rounded-xl py-2 px-1 text-center transition-all">
+        <span class="text-sm">${c.icon}</span>
+        <span class="text-[10px] font-medium text-slate-300">${c.label}</span>
+      </button>`).join('');
+    if (walletTokens.length) {
+      html += walletTokens.map(t =>
+        `<button onclick="App.selectPayMethod('swap:${t.symbol}')" class="pay-chip flex flex-col items-center gap-0.5 bg-slate-800 border-2 border-slate-700 hover:border-blue-500/50 rounded-xl py-2 px-1 text-center transition-all">
+          <span class="text-sm">🪙</span>
+          <span class="text-[10px] font-medium text-slate-300">${t.symbol}</span>
+        </button>`).join('');
+    }
+    moreGrid.innerHTML = html;
+  }
+
+  // Populate hidden source token dropdown (for on-chain swap logic)
   const srcSelect = document.getElementById('deposit-src-token');
   if (srcSelect) {
-    const vaultCur = vault.currency;
-    srcSelect.innerHTML = `<option value="native">${vaultCur} (stessa valuta)</option>` +
+    srcSelect.innerHTML = `<option value="native">${vaultCur}</option>` +
       SWAP_TOKENS.filter(t => t.symbol !== vaultCur)
         .map(t => `<option value="${t.symbol}">${t.symbol}</option>`).join('');
     srcSelect.value = 'native';
-    document.getElementById('swap-quote-box')?.classList.add('hidden');
-    document.getElementById('deposit-lock-btn').textContent = '🔒 Blocca';
   }
+
+  // Reset payment state
+  state._payMethod = 'direct';
+  state._crossChainCoin = null;
+  document.getElementById('swap-quote-box')?.classList.add('hidden');
+  document.getElementById('pay-auto-info')?.classList.add('hidden');
+  document.getElementById('pay-more-grid')?.classList.add('hidden');
+  document.getElementById('deposit-lock-btn').textContent = '🔒 Blocca nel salvadanaio';
+  App._resetPayChips();
+  // Highlight default "direct" chip
+  const directChip = document.getElementById('pay-direct');
+  if (directChip) {
+    directChip.classList.remove('bg-slate-800', 'border-slate-700');
+    directChip.classList.add('active', 'bg-blue-600/20', 'border-blue-500');
+    const lbl = directChip.querySelector('span:last-child');
+    if (lbl) lbl.classList.replace('text-slate-300', 'text-white');
+  }
+
   // Debounce swap preview on amount input
   const amtInput = document.getElementById('deposit-amount');
   if (amtInput) {
     amtInput.oninput = () => {
-      if (document.getElementById('deposit-src-token').value !== 'native') App.fetchSwapPreview();
+      if (state._payMethod === 'swap') App.fetchSwapPreview();
     };
   }
   // Check MATIC balance for gas warning
@@ -952,6 +995,17 @@ async function getTokenBalance(address, currency) {
 App.showCaveauLock = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
+
+  // Cross-chain: route to SideShift modal (no amount needed upfront)
+  if (state._payMethod === 'crosschain' && state._crossChainCoin) {
+    const ccIdx = CROSS_CHAINS.findIndex(c => c.symbol === state._crossChainCoin.symbol);
+    if (ccIdx >= 0) {
+      App.openCrossChainModal();
+      App.selectCrossChainCoin(ccIdx);
+      return;
+    }
+  }
+
   const amount = parseFloat(document.getElementById('deposit-amount').value);
   if (!amount || amount <= 0) { showError('deposit-error', 'Inserisci un importo valido.'); return; }
   state.currentLockAmount = amount;
@@ -1129,6 +1183,92 @@ async function buildSwapTx(priceRoute, userAddress) {
   if (!res.ok) throw new Error('Errore costruzione swap TX');
   return await res.json();
 }
+
+// ─── Payment Method Chip Selector ────────────────────────────
+App._resetPayChips = function() {
+  document.querySelectorAll('.pay-chip').forEach(el => {
+    el.classList.remove('active', 'bg-blue-600/20', 'border-blue-500');
+    el.classList.add('bg-slate-800', 'border-slate-700');
+    const label = el.querySelector('span:last-child');
+    if (label) label.classList.replace('text-white', 'text-slate-300');
+  });
+};
+
+App.selectPayMethod = function(method) {
+  // Reset all chips visually
+  App._resetPayChips();
+
+  // Find and highlight the clicked chip
+  const chipMap = { direct: 'pay-direct', btc: 'pay-btc', eth: 'pay-eth' };
+  const chipEl = chipMap[method] ? document.getElementById(chipMap[method]) : 
+    document.querySelector(`[onclick*="'${method}'"]`);
+  if (chipEl) {
+    chipEl.classList.remove('bg-slate-800', 'border-slate-700');
+    chipEl.classList.add('active', 'bg-blue-600/20', 'border-blue-500');
+    const label = chipEl.querySelector('span:last-child');
+    if (label) label.classList.replace('text-slate-300', 'text-white');
+  }
+
+  const autoInfo = document.getElementById('pay-auto-info');
+  const quoteBox = document.getElementById('swap-quote-box');
+  const lockBtn = document.getElementById('deposit-lock-btn');
+  const srcSelect = document.getElementById('deposit-src-token');
+
+  // Determine method type
+  if (method === 'direct') {
+    // Direct stablecoin deposit
+    state._payMethod = 'direct';
+    state._crossChainCoin = null;
+    srcSelect.value = 'native';
+    autoInfo.classList.add('hidden');
+    quoteBox.classList.add('hidden');
+    lockBtn.textContent = '🔒 Blocca nel salvadanaio';
+
+  } else if (method === 'btc' || method === 'eth') {
+    // Cross-chain: BTC or ETH (main chips)
+    const ccCoin = CROSS_CHAINS.find(c => c.symbol === method.toUpperCase());
+    state._payMethod = 'crosschain';
+    state._crossChainCoin = ccCoin;
+    srcSelect.value = 'native';
+    autoInfo.classList.remove('hidden');
+    quoteBox.classList.add('hidden');
+    lockBtn.textContent = `📩 Deposita con ${ccCoin.label}`;
+
+  } else if (method.startsWith('cc:')) {
+    // Cross-chain: other coins (from "more" grid)
+    const symbol = method.split(':')[1];
+    const ccCoin = CROSS_CHAINS.find(c => c.symbol === symbol);
+    state._payMethod = 'crosschain';
+    state._crossChainCoin = ccCoin;
+    srcSelect.value = 'native';
+    autoInfo.classList.remove('hidden');
+    quoteBox.classList.add('hidden');
+    lockBtn.textContent = `📩 Deposita con ${ccCoin.label}`;
+
+  } else if (method.startsWith('swap:')) {
+    // On-chain swap: wallet tokens (WETH, WBTC, etc.)
+    const symbol = method.split(':')[1];
+    state._payMethod = 'swap';
+    state._crossChainCoin = null;
+    srcSelect.value = symbol;
+    autoInfo.classList.remove('hidden');
+    quoteBox.classList.remove('hidden');
+    lockBtn.textContent = '💱 Converti e Blocca';
+    App.fetchSwapPreview();
+  }
+};
+
+App.toggleMorePayMethods = function() {
+  const grid = document.getElementById('pay-more-grid');
+  const btn = document.getElementById('pay-more-btn');
+  if (grid.classList.contains('hidden')) {
+    grid.classList.remove('hidden');
+    btn.textContent = 'Meno valute ▴';
+  } else {
+    grid.classList.add('hidden');
+    btn.textContent = 'Altre valute ▾';
+  }
+};
 
 App.onSrcTokenChange = function() {
   const sel = document.getElementById('deposit-src-token').value;

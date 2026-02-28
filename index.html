@@ -297,33 +297,59 @@
           ⛽ Servono pochi centesimi per la commissione. <button onclick="App.autoGetMatic()" class="underline font-semibold">Risolvilo automaticamente</button>
         </div>
         <div id="deposit-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-2 rounded-xl mb-2"></div>
-        <div class="flex gap-2 mb-2">
-          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="Quanto vuoi aggiungere?" class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
-          <button onclick="App.showCaveauLock()" id="deposit-lock-btn" class="bg-blue-600 hover:bg-blue-500 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">🔒 Blocca</button>
+
+        <!-- Step 1: Quanto -->
+        <div class="mb-3">
+          <input id="deposit-amount" type="number" min="0.01" step="0.01" placeholder="Quanto vuoi mettere?" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm">
         </div>
 
-        <!-- Advanced deposit options (collapsed by default) -->
-        <details class="mt-3">
-          <summary class="text-slate-500 text-xs cursor-pointer hover:text-slate-300 transition-colors select-none">⚙️ Opzioni avanzate</summary>
-          <div class="mt-3 space-y-2 pt-2 border-t border-slate-700/50">
-            <div>
-              <label class="text-slate-500 text-xs mb-1 block">Deposita con un'altra valuta</label>
-              <select id="deposit-src-token" onchange="App.onSrcTokenChange()" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-                <option value="native">Stessa valuta del salvadanaio</option>
-              </select>
-              <p class="text-slate-600 text-xs mt-1">Converte automaticamente qualsiasi valuta.</p>
-            </div>
-            <div id="swap-quote-box" class="hidden bg-blue-500/10 border border-blue-500/30 rounded-xl p-2 text-xs text-blue-300">
-              💱 Riceverai circa <span id="swap-dest-amount" class="font-bold">—</span> <span id="swap-dest-symbol"></span>
-              <span class="text-blue-400/60 ml-1">(differenza max 1%)</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <button onclick="App.addDeposit()" class="text-slate-500 hover:text-slate-400 text-xs transition-colors">📝 Solo nota manuale</button>
-              <span class="text-slate-700">·</span>
-              <button onclick="App.openCrossChainModal()" class="text-purple-400 hover:text-purple-300 text-xs transition-colors font-medium">🌐 Da Bitcoin / Ethereum</button>
-            </div>
+        <!-- Step 2: Come vuoi pagare? -->
+        <div class="mb-3">
+          <p class="text-slate-500 text-xs mb-2">Come vuoi pagare?</p>
+          <div id="pay-method-grid" class="grid grid-cols-3 gap-1.5 mb-2">
+            <button onclick="App.selectPayMethod('direct')" id="pay-direct" class="pay-chip active flex flex-col items-center gap-1 bg-blue-600/20 border-2 border-blue-500 rounded-xl py-2.5 px-1 text-center transition-all">
+              <span class="text-lg">💵</span>
+              <span class="text-xs font-medium text-white" id="pay-direct-label">Dollari</span>
+            </button>
+            <button onclick="App.selectPayMethod('btc')" id="pay-btc" class="pay-chip flex flex-col items-center gap-1 bg-slate-800 border-2 border-slate-700 hover:border-orange-500/50 rounded-xl py-2.5 px-1 text-center transition-all">
+              <span class="text-lg">₿</span>
+              <span class="text-xs font-medium text-slate-300">Bitcoin</span>
+            </button>
+            <button onclick="App.selectPayMethod('eth')" id="pay-eth" class="pay-chip flex flex-col items-center gap-1 bg-slate-800 border-2 border-slate-700 hover:border-purple-500/50 rounded-xl py-2.5 px-1 text-center transition-all">
+              <span class="text-lg">Ξ</span>
+              <span class="text-xs font-medium text-slate-300">Ethereum</span>
+            </button>
           </div>
-        </details>
+          <div id="pay-more-grid" class="hidden grid grid-cols-4 gap-1.5 mb-2">
+            <!-- Populated by JS: SOL, LTC, DOGE, + wallet tokens -->
+          </div>
+          <button onclick="App.toggleMorePayMethods()" id="pay-more-btn" class="text-slate-500 hover:text-slate-300 text-xs transition-colors w-full text-center py-1">
+            Altre valute ▾
+          </button>
+        </div>
+
+        <!-- Auto-conversion info (shown when non-direct method selected) -->
+        <div id="pay-auto-info" class="hidden bg-blue-500/10 border border-blue-500/30 rounded-xl p-2.5 mb-3 text-xs text-blue-300">
+          <span id="pay-auto-text">💱 Convertiamo noi automaticamente in <strong id="pay-auto-dest">dollari digitali</strong>.</span>
+        </div>
+
+        <!-- Swap quote preview -->
+        <div id="swap-quote-box" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-2.5 mb-3 text-xs text-emerald-300">
+          Riceverai circa <span id="swap-dest-amount" class="font-bold">—</span> <span id="swap-dest-symbol"></span>
+        </div>
+
+        <!-- Hidden select for on-chain swap (used internally by JS) -->
+        <select id="deposit-src-token" onchange="App.onSrcTokenChange()" class="hidden">
+          <option value="native">native</option>
+        </select>
+
+        <!-- Lock button -->
+        <button onclick="App.showCaveauLock()" id="deposit-lock-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl text-sm font-semibold transition-colors">� Blocca nel salvadanaio</button>
+
+        <!-- Manual note (tiny link for power users) -->
+        <div class="text-center mt-2">
+          <button onclick="App.addDeposit()" class="text-slate-600 hover:text-slate-400 text-xs transition-colors">📝 Aggiungi solo una nota</button>
+        </div>
       </div>
 
       <!-- Transactions -->
