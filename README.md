@@ -6,7 +6,7 @@ Una PWA (Progressive Web App) non-custodial che trasforma la forza di volontà i
 
 **🌐 Demo live:** [piggyvault.xyz](https://piggyvault.xyz) · [caveau-digitale.vercel.app](https://caveau-digitale.vercel.app)
 
-**🐙 IPFS (permanente):** [dweb.link](https://QmfW62wH7TTsKhmafWNv3y1GqngGtbq6FswoAkr3uTRfnn.ipfs.dweb.link/caveau-digitale/) · CID: `QmfW62wH7TTsKhmafWNv3y1GqngGtbq6FswoAkr3uTRfnn`
+**🐙 IPFS (permanente):** [dweb.link](https://QmUVMCs4D1nGKstwzi3gdhfrTCcUyTCbWu4nXax6TeDoSS.ipfs.dweb.link/caveau-digitale/) · CID: `QmUVMCs4D1nGKstwzi3gdhfrTCcUyTCbWu4nXax6TeDoSS`
 
 ---
 
