@@ -21,6 +21,9 @@ jobs:
 
       - run: npm install --no-audit --no-fund
 
+      - name: Remove Foundry test files (compiled by fuzz-tests job)
+        run: find test -name '*.t.sol' -delete
+
       - name: Hardhat compile
         run: npx hardhat compile
 
