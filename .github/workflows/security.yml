@@ -1,0 +1,148 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  eslint-security:
+    name: ESLint Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx eslint app.js --format json > eslint-report.json || true
+      - name: Upload ESLint Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: eslint-security-report
+          path: eslint-report.json
+
+  npm-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high || true
+
+  snyk:
+    name: Snyk Vulnerability Scan
+    runs-on: ubuntu-latest
+    if: ${{ vars.SNYK_TOKEN != '' || secrets.SNYK_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SONAR_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  mythril:
+    name: Mythril Deep Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install solc
+        run: |
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y solc
+      - name: Install Mythril
+        run: pip3 install mythril
+      - name: Analyze CaveauDigitaleV2
+        run: >
+          myth analyze contracts/CaveauDigitaleV2.sol
+          --solc-args "--via-ir --optimize"
+          --solc-json '{"remappings":["@openzeppelin/contracts=node_modules/@openzeppelin/contracts"]}'
+          --execution-timeout 300
+          -o json > mythril-v2-report.json
+          || true
+        timeout-minutes: 15
+      - name: Analyze CaveauAave
+        run: >
+          myth analyze contracts/CaveauAave.sol
+          --solc-args "--via-ir --optimize"
+          --solc-json '{"remappings":["@openzeppelin/contracts=node_modules/@openzeppelin/contracts"]}'
+          --execution-timeout 300
+          -o json > mythril-aave-report.json
+          || true
+        timeout-minutes: 15
+      - name: Upload Mythril Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: mythril-reports
+          path: mythril-*-report.json
+
+  slither:
+    name: Slither Smart Contract Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install solc
+        run: |
+          sudo add-apt-repository -y ppa:ethereum/ethereum
+          sudo apt-get update
+          sudo apt-get install -y solc
+      - name: Install Slither
+        run: pip3 install slither-analyzer
+      - name: Run Slither on CaveauDigitaleV2
+        run: >
+          slither contracts/CaveauDigitaleV2.sol
+          --solc-remaps "@openzeppelin/contracts=node_modules/@openzeppelin/contracts"
+          --solc-args "--via-ir --optimize"
+          --json slither-v2-report.json
+          || true
+      - name: Run Slither on CaveauAave
+        run: >
+          slither contracts/CaveauAave.sol
+          --solc-remaps "@openzeppelin/contracts=node_modules/@openzeppelin/contracts"
+          --solc-args "--via-ir --optimize"
+          --json slither-aave-report.json
+          || true
+      - name: Upload Slither Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: slither-reports
+          path: slither-*-report.json

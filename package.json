@@ -1,10 +1,17 @@
 {
   "name": "piggy",
   "version": "1.0.0",
-  "description": "> **Protocollo di Risparmio Inviolabile su Blockchain**",
+  "description": "Non-custodial time-lock savings protocol on Polygon",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint app.js",
+    "audit:deps": "npm audit",
+    "audit:contracts": "slither contracts/CaveauDigitaleV2.sol --solc-remaps '@openzeppelin/contracts=node_modules/@openzeppelin/contracts' --solc-args '--via-ir --optimize' && slither contracts/CaveauAave.sol --solc-remaps '@openzeppelin/contracts=node_modules/@openzeppelin/contracts' --solc-args '--via-ir --optimize'",
+    "build:min": "terser app.js --compress passes=2 --mangle --output app.min.js",
+    "build:css": "tailwindcss -i tailwind-input.css -o tailwind.min.css --minify",
+    "build:privy": "esbuild src/privy-bundle.js --bundle --format=iife --global-name=__PrivySDK --outfile=privy-sdk.js --platform=browser --target=es2020 --minify",
+    "build:thirdweb": "esbuild src/thirdweb-bundle.js --bundle --format=iife --global-name=__ThirdwebSDK --outfile=thirdweb-sdk.js --platform=browser --target=es2020 --minify"
   },
   "repository": {
     "type": "git",
@@ -12,17 +19,28 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "bugs": {
     "url": "https://github.com/creazionecontenuti-oss/caveau-digitale/issues"
   },
   "homepage": "https://github.com/creazionecontenuti-oss/caveau-digitale#readme",
+  "dependencies": {
+    "@privy-io/js-sdk-core": "^0.36.1",
+    "thirdweb": "^5.119.0",
+    "viem": "^2.46.3"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^4.0.5",
+    "@nomicfoundation/hardhat-verify": "^3.0.11",
     "@openzeppelin/contracts": "^5.6.1",
     "dotenv": "^17.3.1",
+    "esbuild": "^0.24.2",
+    "eslint": "^10.0.2",
+    "eslint-plugin-security": "^4.0.0",
     "ethers": "^6.16.0",
-    "hardhat": "^3.1.10"
+    "hardhat": "^3.1.10",
+    "tailwindcss": "^3.4.19",
+    "terser": "^5.46.0"
   }
 }

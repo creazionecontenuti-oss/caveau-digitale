@@ -22,19 +22,20 @@ async function main() {
   }
 
   // Read compiled artifact from Hardhat output
-  const artifact = JSON.parse(
-    readFileSync("artifacts/contracts/CaveauDigitale.sol/CaveauDigitale.json", "utf8")
-  );
+  const contractName = process.argv[2] || "CaveauDigitaleV2";
+  const artifactPath = `artifacts/contracts/${contractName}.sol/${contractName}.json`;
+  console.log("Loading artifact:", artifactPath);
+  const artifact = JSON.parse(readFileSync(artifactPath, "utf8"));
 
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  console.log("Deploying...");
+  console.log("Deploying", contractName, "...");
   const caveau = await factory.deploy();
   console.log("TX inviata:", caveau.deploymentTransaction().hash);
   console.log("Attendi conferma...");
   await caveau.waitForDeployment();
 
   const address = await caveau.getAddress();
-  console.log("\n✅ CaveauDigitale deployato su Polygon!");
+  console.log("\n✅", contractName, "deployato su Polygon!");
   console.log("📍 Indirizzo contratto:", address);
   console.log("🔗 PolygonScan: https://polygonscan.com/address/" + address);
   console.log("\n👉 Sostituisci CAVEAU_CONTRACT in app.js con questo indirizzo");

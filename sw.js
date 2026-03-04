@@ -1,6 +1,20 @@
 // Caveau Digitale — Service Worker (auto-update v5)
-const CACHE_VERSION = 'piggy-v9-20260228a';
-const CORE_ASSETS = ['/', '/index.html', '/app.js', '/manifest.json'];
+const CACHE_VERSION = 'piggy-v9160-security-audit';
+const CORE_ASSETS = [
+  '/', '/index.html', '/app.min.js', '/thirdweb-sdk.js', '/manifest.json',
+  '/tailwind.min.css',
+  '/lib/framework7-bundle.min.css',
+  '/lib/framework7-bundle.min.js',
+  '/lib/framework7-icons.min.css',
+  '/lib/fonts/Framework7Icons-Regular.woff2',
+  '/lib/ethers.umd.min.js',
+  '/logo-grande.webp',
+  '/icona-app-quadrata.webp',
+  '/icon-192.webp',
+  '/piggy-tab-icon.webp',
+  '/i18n.js',
+  '/i18n-langs.js'
+];
 
 self.addEventListener('install', e => {
   // Force immediate activation — don't wait for old tabs to close
@@ -37,7 +51,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return;
+  const isCDN = url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'cdnjs.cloudflare.com';
+  if (url.origin !== self.location.origin && !isCDN) return;
 
   // ALWAYS network-first for HTML — never serve stale HTML
   if (e.request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/') {

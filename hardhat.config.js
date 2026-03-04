@@ -1,5 +1,6 @@
 import "dotenv/config";
 import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-verify";
 
 const polygonConfig = {
   type: "http",
@@ -20,5 +21,10 @@ export default {
   },
   networks: {
     polygon: polygonConfig
+  },
+  etherscan: {
+    apiKey: {
+      polygon: process.env.POLYGONSCAN_API_KEY || ""
+    }
   }
 };
