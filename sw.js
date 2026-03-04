@@ -1,5 +1,5 @@
 // Caveau Digitale — Service Worker (auto-update v5)
-const CACHE_VERSION = 'piggy-v9160-security-audit';
+const CACHE_VERSION = 'piggy-v9161-readme-license';
 const CORE_ASSETS = [
   '/', '/index.html', '/app.min.js', '/thirdweb-sdk.js', '/manifest.json',
   '/tailwind.min.css',
@@ -43,6 +43,7 @@ self.addEventListener('activate', e => {
 
 // Respond to version check from page
 self.addEventListener('message', e => {
+  if (e.origin && e.origin !== self.location.origin) return;
   if (e.data?.type === 'GET_VERSION') {
     e.source.postMessage({ type: 'SW_VERSION', version: CACHE_VERSION });
   }

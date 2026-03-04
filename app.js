@@ -46,8 +46,8 @@ function haptic(ms) {
   // iOS 18+ — hidden switch toggle triggers Taptic Engine
   if (_hapticEl) { try { _hapticEl.checked = !_hapticEl.checked; _hapticEl.dispatchEvent(new Event('change', {bubbles:true})); } catch(e){} }
 }
-const APP_VERSION = 'v9.16.0-security-audit';
-const APP_UPDATED_AT = '2026-03-04 17:20 CET';
+const APP_VERSION = 'v9.16.1-readme-license';
+const APP_UPDATED_AT = '2026-03-04 17:28 CET';
 
 // ─── Blockchain Config (Polygon Mainnet) ─────────────────────
 const POLYGON_RPC_LIST = [

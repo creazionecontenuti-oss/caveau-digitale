@@ -1,4 +1,4 @@
-# � PiggyVault (Caveau Digitale)
+# <img src="maialino-icona-fianco.png" alt="PiggyVault" height="40"> PiggyVault (Caveau Digitale)
 
 > **Non-Custodial Time-Lock Savings Protocol on Polygon**
 
@@ -224,10 +224,16 @@ vercel --prod --yes
 
 ## License
 
-MIT — Do whatever you want. If you use it, consider a donation:
+**Business Source License 1.1** (BSL 1.1) — Same license used by Uniswap, Lido, and other major DeFi protocols.
+
+- **You CAN**: read, audit, learn from, and use for personal/non-commercial purposes
+- **You CANNOT**: fork, deploy, or commercialize without permission
+- **After March 4, 2028**: automatically converts to GPL-2.0 (fully open source)
+
+See [`LICENSE`](./LICENSE) for full terms.
 
 ```
-0xa359bb875A08b0A392541638Aa614a2e59D63b2C (Polygon)
+Donations: 0xa359bb875A08b0A392541638Aa614a2e59D63b2C (Polygon)
 ```
 
 ---
