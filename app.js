@@ -577,12 +577,87 @@ Object.entries(TOKEN_ADDRESSES).forEach(([sym, addr]) => {
   TOKEN_ADDR_TO_SYMBOL[addr.toLowerCase()] = sym;
 });
 
+async function _fetchTxHistory(caveau, id, decimals, depositedField, label, provider) {
+  try {
+    const events = await caveau.queryFilter(caveau.filters.Deposited(id));
+    const txHistory = events.map(ev => ({
+      id: uid(),
+      date: new Date(ev.blockNumber * 1000).toISOString(),
+      amount: Number(ethers.formatUnits(ev.args.amount, decimals)),
+      txHash: ev.transactionHash,
+      onChain: true,
+      restoredFromChain: true
+    }));
+    for (const tx of txHistory) {
+      try {
+        const ev = events.find(e => e.transactionHash === tx.txHash);
+        if (ev) {
+          const block = await provider.getBlock(ev.blockNumber);
+          if (block) tx.date = new Date(block.timestamp * 1000).toISOString();
+        }
+      } catch { /* use approximate date */ }
+    }
+    return txHistory;
+  } catch(e) {
+    console.warn(`[Chain/${label}] Failed to read deposit events for vault`, id, e);
+    const totalDep = Number(ethers.formatUnits(depositedField, decimals));
+    return totalDep > 0 ? [{ id: uid(), date: new Date().toISOString(), amount: totalDep, onChain: true, recovered: true }] : [];
+  }
+}
+
+function _updateExistingVault(existing, v, strategy, decimals, txHistory) {
+  let vaultChanged = false;
+  const onChainName = v.name || existing.name;
+  const onChainIcon = v.icon || existing.icon;
+  if (onChainName !== existing.name) { existing.name = onChainName; vaultChanged = true; }
+  if (onChainIcon !== existing.icon) { existing.icon = onChainIcon; vaultChanged = true; }
+  existing.withdrawn = v.withdrawn;
+  existing.strategy = strategy;
+  existing.onChainContract = strategy;
+  const chainTs = Number(v.unlockDate);
+  if (chainTs > 0) {
+    const chainDateLocal = toLocalDatetimeString(new Date(chainTs * 1000));
+    if (existing.unlockDate !== chainDateLocal) { existing.unlockDate = chainDateLocal; vaultChanged = true; }
+  }
+  if (strategy === 'aave' && v.currentValue !== undefined) {
+    existing._aaveCurrentValue = Number(ethers.formatUnits(v.currentValue, decimals));
+    existing._aaveEarnedInterest = Number(ethers.formatUnits(v.earnedInterest, decimals));
+  }
+  const localOnly = existing.transactions.filter(t => !t.onChain && !t.restoredFromChain && !t.recovered);
+  const oldCount = existing.transactions.length;
+  existing.transactions = [...localOnly, ...txHistory];
+  if (existing.transactions.length !== oldCount) vaultChanged = true;
+  return vaultChanged;
+}
+
+function _createNewVaultFromChain(id, v, strategy, currency, decimals, txHistory) {
+  const unlockDate = Number(v.unlockDate) > 0 ? toLocalDatetimeString(new Date(Number(v.unlockDate) * 1000)) : null;
+  const newVault = {
+    id: uid(),
+    name: v.name || `Vault #${id}`,
+    icon: v.icon || '🐷',
+    color: strategy === 'aave' ? 'from-emerald-600 to-teal-700' : 'from-blue-600 to-indigo-700',
+    target: Number(ethers.formatUnits(v.targetAmount, decimals)),
+    currency, unlockDate,
+    unlockMode: Number(v.unlockMode),
+    strategy, onChainContract: strategy,
+    transactions: txHistory,
+    onChainVaultId: id,
+    withdrawn: v.withdrawn,
+    createdAt: new Date().toISOString(),
+    restoredFromChain: true
+  };
+  if (strategy === 'aave' && v.currentValue !== undefined) {
+    newVault._aaveCurrentValue = Number(ethers.formatUnits(v.currentValue, decimals));
+    newVault._aaveEarnedInterest = Number(ethers.formatUnits(v.earnedInterest, decimals));
+  }
+  return newVault;
+}
+
 async function syncVaultsFromChain() {
   const provider = state.walletSigner?.provider || getFallbackProvider();
-
   let changed = false;
 
-  // Sync from both contracts: base (V2) and Aave
   const contracts = [
     { contract: new ethers.Contract(CAVEAU_CONTRACT, CAVEAU_ABI, provider), strategy: 'base', label: 'Base' },
     { contract: new ethers.Contract(CAVEAU_AAVE_CONTRACT, CAVEAU_AAVE_ABI, provider), strategy: 'aave', label: 'Aave' },
@@ -590,125 +665,29 @@ async function syncVaultsFromChain() {
 
   for (const { contract: caveau, strategy, label } of contracts) {
     let vaultIds;
-    try {
-      vaultIds = await caveau.getOwnerVaults(state.address);
-    } catch {
-      continue; // Contract might not have this user's vaults yet
-    }
-
+    try { vaultIds = await caveau.getOwnerVaults(state.address); } catch { continue; }
     if (!vaultIds || vaultIds.length === 0) continue;
 
     for (const vid of vaultIds) {
       const id = Number(vid);
-
-      // Skip vaults the user has deleted (localStorage fallback)
       if (isVaultDeleted(id, strategy)) continue;
 
-      // Fetch vault data from chain
       let v;
       try { v = await caveau.getVault(id); }
       catch(e) { console.warn(`[Chain/${label}] Failed to read vault`, id, e); continue; }
-
-      // Skip vaults marked as deleted on-chain
       if (v.name === '__DELETED__') continue;
 
       const tokenAddr = v.token.toLowerCase();
       const currency = TOKEN_ADDR_TO_SYMBOL[tokenAddr] || 'USDC';
       const decimals = TOKEN_DECIMALS[currency] || 6;
-
-      // For Aave vaults, use principalDeposited; for base, use totalDeposited
       const depositedField = strategy === 'aave' ? v.principalDeposited : v.totalDeposited;
+      const txHistory = await _fetchTxHistory(caveau, id, decimals, depositedField, label, provider);
 
-      // Read deposit events for this vault to rebuild full transaction history
-      let txHistory = [];
-      try {
-        const depositFilter = caveau.filters.Deposited(id);
-        const events = await caveau.queryFilter(depositFilter);
-        txHistory = events.map(ev => ({
-          id: uid(),
-          date: new Date(ev.blockNumber * 1000).toISOString(),
-          amount: Number(ethers.formatUnits(ev.args.amount, decimals)),
-          txHash: ev.transactionHash,
-          onChain: true,
-          restoredFromChain: true
-        }));
-        // Try to get actual timestamps for each event
-        for (const tx of txHistory) {
-          try {
-            const ev = events.find(e => e.transactionHash === tx.txHash);
-            if (ev) {
-              const block = await provider.getBlock(ev.blockNumber);
-              if (block) tx.date = new Date(block.timestamp * 1000).toISOString();
-            }
-          } catch { /* use approximate date */ }
-        }
-      } catch(e) {
-        console.warn(`[Chain/${label}] Failed to read deposit events for vault`, id, e);
-        const totalDep = Number(ethers.formatUnits(depositedField, decimals));
-        if (totalDep > 0) {
-          txHistory = [{ id: uid(), date: new Date().toISOString(), amount: totalDep, onChain: true, recovered: true }];
-        }
-      }
-
-      // Use composite key to distinguish base vs aave vaults with same on-chain ID
-      const existing = state.vaults.find(lv =>
-        lv.onChainVaultId === id && (lv.onChainContract || lv.strategy || 'base') === strategy
-      );
+      const existing = state.vaults.find(lv => lv.onChainVaultId === id && (lv.onChainContract || lv.strategy || 'base') === strategy);
       if (existing) {
-        const onChainName = v.name || existing.name;
-        const onChainIcon = v.icon || existing.icon;
-        let vaultChanged = false;
-        if (onChainName !== existing.name) { existing.name = onChainName; vaultChanged = true; }
-        if (onChainIcon !== existing.icon) { existing.icon = onChainIcon; vaultChanged = true; }
-        existing.withdrawn = v.withdrawn;
-        existing.strategy = strategy;
-        existing.onChainContract = strategy;
-        // Always sync unlockDate from chain to avoid UI/contract mismatch
-        const chainTs = Number(v.unlockDate);
-        if (chainTs > 0) {
-          const chainDateLocal = toLocalDatetimeString(new Date(chainTs * 1000));
-          if (existing.unlockDate !== chainDateLocal) { existing.unlockDate = chainDateLocal; vaultChanged = true; }
-        }
-        // For Aave vaults, update interest data
-        if (strategy === 'aave' && v.currentValue !== undefined) {
-          existing._aaveCurrentValue = Number(ethers.formatUnits(v.currentValue, decimals));
-          existing._aaveEarnedInterest = Number(ethers.formatUnits(v.earnedInterest, decimals));
-        }
-        // Replace on-chain transactions with fresh chain data (keep local manual notes only)
-        const localOnly = existing.transactions.filter(t => !t.onChain && !t.restoredFromChain && !t.recovered);
-        const oldCount = existing.transactions.length;
-        existing.transactions = [...localOnly, ...txHistory];
-        if (existing.transactions.length !== oldCount) vaultChanged = true;
-        if (vaultChanged) changed = true;
+        if (_updateExistingVault(existing, v, strategy, decimals, txHistory)) changed = true;
       } else {
-        const unlockDate = Number(v.unlockDate) > 0
-          ? toLocalDatetimeString(new Date(Number(v.unlockDate) * 1000))
-          : null;
-
-        const newVault = {
-          id: uid(),
-          name: v.name || `Vault #${id}`,
-          icon: v.icon || '🐷',
-          color: strategy === 'aave' ? 'from-emerald-600 to-teal-700' : 'from-blue-600 to-indigo-700',
-          target: Number(ethers.formatUnits(v.targetAmount, decimals)),
-          currency,
-          unlockDate,
-          unlockMode: Number(v.unlockMode),
-          strategy,
-          onChainContract: strategy,
-          transactions: txHistory,
-          onChainVaultId: id,
-          withdrawn: v.withdrawn,
-          createdAt: new Date().toISOString(),
-          restoredFromChain: true
-        };
-
-        // For Aave vaults, add interest data
-        if (strategy === 'aave' && v.currentValue !== undefined) {
-          newVault._aaveCurrentValue = Number(ethers.formatUnits(v.currentValue, decimals));
-          newVault._aaveEarnedInterest = Number(ethers.formatUnits(v.earnedInterest, decimals));
-        }
-
+        const newVault = _createNewVaultFromChain(id, v, strategy, currency, decimals, txHistory);
         state.vaults.push(newVault);
         changed = true;
         console.log(`[Chain/${label}] Recovered vault:`, newVault.name, '(on-chain ID:', id, ')');
@@ -1025,6 +1004,27 @@ async function refreshWalletBalance(silent) {
   }
 }
 
+function _formatPolValue(polAmount, usdAmount, cur, decimals) {
+  if (cur === 'POL') return polAmount.toFixed(4);
+  return _polPriceUsd > 0 ? convertFromUsd(usdAmount, cur).toFixed(decimals) : '—';
+}
+
+function _getGasBalanceClass(polBal) {
+  if (polBal < 0.001) return 'text-sm font-semibold text-red-400';
+  if (polBal < 0.01) return 'text-sm font-semibold text-amber-400';
+  return 'text-sm font-semibold text-emerald-400';
+}
+
+function _updateGasStatus(polBal) {
+  const statusEl = document.getElementById('gas-status');
+  const convertBtn = document.getElementById('pol-convert-btn');
+  if (convertBtn) convertBtn.classList.toggle('hidden', polBal <= POL_KEEP + 0.5);
+  if (!statusEl) return;
+  if (polBal < 0.001) { statusEl.textContent = '⚠️ Ricarica'; statusEl.className = 'text-[10px] text-red-400 font-semibold'; }
+  else if (polBal < 0.01) { statusEl.textContent = '⚡ Basso'; statusEl.className = 'text-[10px] text-amber-400'; }
+  else { statusEl.textContent = '✓ OK'; statusEl.className = 'text-[10px] text-emerald-400'; }
+}
+
 async function updateGasCard() {
   const card = document.getElementById('gas-card');
   if (!card || !state.address) { if (card) card.classList.add('hidden'); return; }
@@ -1032,10 +1032,7 @@ async function updateGasCard() {
 
   await fetchGasHistory();
   const polBal = state._polBalance || 0;
-  const gasLog = getGasLog();
-  const totalSpent = gasLog.reduce((s, r) => s + (r.pol || 0), 0);
-
-  // Fetch POL price if stale
+  const totalSpent = getGasLog().reduce((s, r) => s + (r.pol || 0), 0);
   if (_polPriceUsd === 0) await fetchPolPrice();
 
   const cur = getDisplayCurrency();
@@ -1043,46 +1040,21 @@ async function updateGasCard() {
   const balUsd = polBal * _polPriceUsd;
   const spentUsd = totalSpent * _polPriceUsd;
 
-  // Balance — primary in chosen currency
   const balValEl = document.getElementById('gas-balance-val');
+  if (balValEl) { balValEl.textContent = _formatPolValue(polBal, balUsd, cur, 2); balValEl.className = _getGasBalanceClass(polBal); }
   const balCurEl = document.getElementById('gas-balance-cur');
-  const balPolEl = document.getElementById('gas-balance-pol');
-  if (balValEl) {
-    if (cur === 'POL') {
-      balValEl.textContent = polBal.toFixed(4);
-    } else {
-      balValEl.textContent = _polPriceUsd > 0 ? convertFromUsd(balUsd, cur).toFixed(2) : '—';
-    }
-    if (polBal < 0.001) balValEl.className = 'text-sm font-semibold text-red-400';
-    else if (polBal < 0.01) balValEl.className = 'text-sm font-semibold text-amber-400';
-    else balValEl.className = 'text-sm font-semibold text-emerald-400';
-  }
   if (balCurEl) balCurEl.textContent = cur === 'POL' ? 'POL' : cs;
+  const balPolEl = document.getElementById('gas-balance-pol');
   if (balPolEl) balPolEl.textContent = cur !== 'POL' ? `(${polBal.toFixed(4)} POL)` : '';
 
-  // Spent — primary in chosen currency
   const spentValEl = document.getElementById('gas-spent-val');
+  if (spentValEl) spentValEl.textContent = _formatPolValue(totalSpent, spentUsd, cur, 4);
   const spentCurEl = document.getElementById('gas-spent-cur');
-  const spentPolEl = document.getElementById('gas-spent-pol');
-  if (spentValEl) {
-    if (cur === 'POL') {
-      spentValEl.textContent = totalSpent.toFixed(4);
-    } else {
-      spentValEl.textContent = _polPriceUsd > 0 ? convertFromUsd(spentUsd, cur).toFixed(4) : '—';
-    }
-  }
   if (spentCurEl) spentCurEl.textContent = cur === 'POL' ? 'POL' : cs;
+  const spentPolEl = document.getElementById('gas-spent-pol');
   if (spentPolEl) spentPolEl.textContent = cur !== 'POL' ? `(${totalSpent.toFixed(4)} POL)` : '';
 
-  // Status + convert button
-  const statusEl = document.getElementById('gas-status');
-  const convertBtn = document.getElementById('pol-convert-btn');
-  if (convertBtn) convertBtn.classList.toggle('hidden', polBal <= POL_KEEP + 0.5);
-  if (statusEl) {
-    if (polBal < 0.001) { statusEl.textContent = '⚠️ Ricarica'; statusEl.className = 'text-[10px] text-red-400 font-semibold'; }
-    else if (polBal < 0.01) { statusEl.textContent = '⚡ Basso'; statusEl.className = 'text-[10px] text-amber-400'; }
-    else { statusEl.textContent = '✓ OK'; statusEl.className = 'text-[10px] text-emerald-400'; }
-  }
+  _updateGasStatus(polBal);
 }
 
 function startBalancePolling() {
@@ -1499,6 +1471,19 @@ App.saveBankDetails = function() {
   _updateBankStatusUI(name, iban);
 };
 
+function _getBankStatusStyle(hasName, validIban, name, iban) {
+  if (hasName && validIban) return { text: t('settings.bank_ok'), bg: 'rgba(16,185,129,.15)', color: '#34d399' };
+  if (!iban && !name) return { text: t('settings.bank_empty'), bg: 'rgba(239,68,68,.1)', color: '#f87171' };
+  return { text: t('settings.bank_incomplete'), bg: 'rgba(251,191,36,.1)', color: '#fbbf24' };
+}
+
+function _updateIbanHint(hintEl, iban, validIban) {
+  if (!hintEl) return;
+  if (!iban) { hintEl.textContent = ''; hintEl.style.color = ''; }
+  else if (validIban) { hintEl.textContent = '✓ IBAN ' + t('withdraw.valid_address'); hintEl.style.color = '#4ade80'; }
+  else { hintEl.textContent = '✗ IBAN ' + t('withdraw.invalid_address'); hintEl.style.color = '#f87171'; }
+}
+
 function _updateBankStatusUI(name, iban) {
   const statusEl = document.getElementById('settings-bank-status');
   const hintEl = document.getElementById('settings-iban-hint');
@@ -1506,24 +1491,11 @@ function _updateBankStatusUI(name, iban) {
   if (!statusEl) return;
   const hasName = name && name.length >= 2;
   const validIban = _isValidIban(iban);
-  if (hasName && validIban) {
-    statusEl.textContent = t('settings.bank_ok');
-    statusEl.style.background = 'rgba(16,185,129,.15)';
-    statusEl.style.color = '#34d399';
-  } else if (!iban && !name) {
-    statusEl.textContent = t('settings.bank_empty');
-    statusEl.style.background = 'rgba(239,68,68,.1)';
-    statusEl.style.color = '#f87171';
-  } else {
-    statusEl.textContent = t('settings.bank_incomplete');
-    statusEl.style.background = 'rgba(251,191,36,.1)';
-    statusEl.style.color = '#fbbf24';
-  }
-  if (hintEl) {
-    if (!iban) { hintEl.textContent = ''; hintEl.style.color = ''; }
-    else if (validIban) { hintEl.textContent = '✓ IBAN ' + t('withdraw.valid_address'); hintEl.style.color = '#4ade80'; }
-    else { hintEl.textContent = '✗ IBAN ' + t('withdraw.invalid_address'); hintEl.style.color = '#f87171'; }
-  }
+  const style = _getBankStatusStyle(hasName, validIban, name, iban);
+  statusEl.textContent = style.text;
+  statusEl.style.background = style.bg;
+  statusEl.style.color = style.color;
+  _updateIbanHint(hintEl, iban, validIban);
   if (ibanInput) {
     ibanInput.style.borderColor = !iban ? '' : validIban ? 'rgba(16,185,129,.4)' : 'rgba(239,68,68,.4)';
   }
@@ -1676,18 +1648,18 @@ App.refreshAfterOnramp = async function() {
           setHtml(t('onramp.converting'));
           const rcpt0 = await tx.wait(); recordGasCost(rcpt0);
           await refreshWalletBalance(false);
-          await renderDashboard();
+          renderDashboard();
           const usdcReceived = Number(ethers.formatUnits(route.destAmount, 6));
           setHtml(t('onramp.conversion_done', {keep: POL_KEEP, usdc: usdcReceived.toFixed(2)}));
         } catch(swapErr) {
           console.warn('[SelfSend] POL→USDC swap failed:', swapErr);
           await refreshWalletBalance(false);
-          await renderDashboard();
+          renderDashboard();
           setHtml(t('onramp.conversion_failed', {polDelta: polDelta.toFixed(2), error: (swapErr.reason || swapErr.message || '').slice(0,60)}));
         }
       } else if (excess <= 0.5) {
         await refreshWalletBalance(false);
-        await renderDashboard();
+        renderDashboard();
         setMsg(t('onramp.pol_received_ok', {polDelta: polDelta.toFixed(2)}));
       } else {
         setMsg(t('onramp.pol_connect_convert', {polDelta: polDelta.toFixed(2)}));
@@ -1821,6 +1793,27 @@ App.openTransak = function() {
   window.open('https://global.transak.com/', '_blank');
 };
 
+function _renderNextUnlockInfo(vaults) {
+  const locked = vaults.filter(v => !isVaultUnlocked(v));
+  if (locked.length) {
+    const withDate = locked.filter(v => v.unlockDate).sort((a,b) => new Date(a.unlockDate)-new Date(b.unlockDate));
+    const next = withDate.length ? withDate[0] : locked[0];
+    document.getElementById('stat-next-unlock').innerHTML = renderVaultIcon(next.icon, 16, false) + ' ' + (next.name || t('common.vault'));
+    if (next.unlockDate) {
+      document.getElementById('stat-days-left').textContent = t('dash.days', {d: daysUntil(next.unlockDate)});
+    } else {
+      const remaining = Math.max(0, next.target - vaultTotal(next));
+      document.getElementById('stat-days-left').textContent = t('detail.to_reach', {amount: remaining.toFixed(0), currency: next.currency});
+    }
+  } else if (vaults.length) {
+    document.getElementById('stat-next-unlock').textContent = t('dash.all_open');
+    document.getElementById('stat-days-left').textContent = '';
+  } else {
+    document.getElementById('stat-next-unlock').textContent = '—';
+    document.getElementById('stat-days-left').textContent = t('dash.no_vaults');
+  }
+}
+
 function renderDashboard() {
   const vaults = state.vaults;
   const lockedTotal = vaults.filter(v => !isVaultUnlocked(v) && !v.withdrawn).reduce((s, v) => s + vaultTotal(v), 0);
@@ -1845,25 +1838,7 @@ function renderDashboard() {
   updateGasCard();
   updateDonateSymbols();
 
-  const locked = vaults.filter(v => !isVaultUnlocked(v));
-  if (locked.length) {
-    const withDate = locked.filter(v => v.unlockDate).sort((a,b) => new Date(a.unlockDate)-new Date(b.unlockDate));
-    const next = withDate.length ? withDate[0] : locked[0];
-    document.getElementById('stat-next-unlock').innerHTML = renderVaultIcon(next.icon, 16, false) + ' ' + (next.name || t('common.vault'));
-    if (next.unlockDate) {
-      const d = daysUntil(next.unlockDate);
-      document.getElementById('stat-days-left').textContent = t('dash.days', {d: d});
-    } else {
-      const remaining = Math.max(0, next.target - vaultTotal(next));
-      document.getElementById('stat-days-left').textContent = t('detail.to_reach', {amount: remaining.toFixed(0), currency: next.currency});
-    }
-  } else if (vaults.length) {
-    document.getElementById('stat-next-unlock').textContent = t('dash.all_open');
-    document.getElementById('stat-days-left').textContent = '';
-  } else {
-    document.getElementById('stat-next-unlock').textContent = '—';
-    document.getElementById('stat-days-left').textContent = t('dash.no_vaults');
-  }
+  _renderNextUnlockInfo(vaults);
 
   // Show/hide quick action buttons
   const quickActions = document.getElementById('home-quick-actions');
@@ -1921,6 +1896,20 @@ function _buildFilterChips() {
   });
 }
 
+function _getVaultCardStatus(vault, unlocked, total) {
+  const mode = vault.unlockMode ?? 0;
+  if (vault.withdrawn) return '<span style="color:#4ade80"><i class="f7-icons" style="font-size:10px;vertical-align:middle">checkmark_circle_fill</i> ' + t('card.withdrawn') + '</span>';
+  if (unlocked) return '<span style="color:#4ade80"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_open_fill</i> ' + t('card.to_withdraw') + '</span>';
+  if (mode === 0) return '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + daysUntil(vault.unlockDate) + 'g</span>';
+  if (mode === 1) {
+    const rem = Math.max(0, vault.target - total);
+    return '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + rem.toFixed(0) + ' ' + vault.currency + '</span>';
+  }
+  const d = vault.unlockDate ? daysUntil(vault.unlockDate) : Infinity;
+  const rem = vault.target ? Math.max(0, vault.target - total) : Infinity;
+  return '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + (d < Infinity ? d+'g' : '') + (rem > 0 && rem < Infinity ? ' / '+rem.toFixed(0) : '') + '</span>';
+}
+
 function renderVaultCards() {
   const grid = document.getElementById('vaults-grid');
   grid.querySelectorAll('.vault-card').forEach(c => c.remove());
@@ -1943,24 +1932,9 @@ function renderVaultCards() {
     const total = vaultTotal(vault);
     const pct = vault.target ? Math.min((total / vault.target) * 100, 100) : 0;
     const unlocked = isVaultUnlocked(vault);
-    const mode = vault.unlockMode ?? 0;
     const isAave = vault.strategy === 'aave' || vault.onChainContract === 'aave';
     const vColor = vault.color || '#3b82f6';
-    let statusHtml = '';
-    if (vault.withdrawn) {
-      statusHtml = '<span style="color:#4ade80"><i class="f7-icons" style="font-size:10px;vertical-align:middle">checkmark_circle_fill</i> ' + t('card.withdrawn') + '</span>';
-    } else if (unlocked) {
-      statusHtml = '<span style="color:#4ade80"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_open_fill</i> ' + t('card.to_withdraw') + '</span>';
-    } else if (mode === 0) {
-      statusHtml = '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + daysUntil(vault.unlockDate) + 'g</span>';
-    } else if (mode === 1) {
-      const rem = Math.max(0, vault.target - total);
-      statusHtml = '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + rem.toFixed(0) + ' ' + vault.currency + '</span>';
-    } else {
-      const d = vault.unlockDate ? daysUntil(vault.unlockDate) : Infinity;
-      const rem = vault.target ? Math.max(0, vault.target - total) : Infinity;
-      statusHtml = '<span style="color:#60a5fa"><i class="f7-icons" style="font-size:10px;vertical-align:middle">lock_fill</i> ' + (d < Infinity ? d+'g' : '') + (rem > 0 && rem < Infinity ? ' / '+rem.toFixed(0) : '') + '</span>';
-    }
+    const statusHtml = _getVaultCardStatus(vault, unlocked, total);
     const aaveBadge = isAave ? '<span style="font-size:8px;background:rgba(16,185,129,.15);color:#34d399;padding:1px 5px;border-radius:6px;font-weight:600;display:inline-block;margin-top:2px"><i class="f7-icons" style="font-size:8px;vertical-align:middle">arrow_up_right</i> Aave</span>' : '';
     const interestLine = isAave && vault._aaveEarnedInterest > 0
       ? '<div style="font-size:9px;color:#34d399;margin-top:1px">+' + vault._aaveEarnedInterest.toFixed(4) + '</div>' : '';
@@ -2128,36 +2102,59 @@ App._updateStrategyAvailability = function() {
   }
 };
 
+function _validateCreateVaultInputs(name, currency, mode) {
+  if (!name) return t('vault.error_name');
+  if (!currency) return t('vault.error_currency');
+  if (!state.walletSigner) return t('vault.error_wallet');
+  return null;
+}
+
+function _parseCreateVaultTarget(mode) {
+  const needsTarget = mode === 1 || mode === 2 || mode === 3;
+  if (!needsTarget) return { target: 0 };
+  const target = parseFloat(document.getElementById('vault-target').value);
+  if (!target || target <= 0) return { error: t('vault.error_target') };
+  return { target };
+}
+
+function _parseCreateVaultDate(mode) {
+  const needsDate = mode === 0 || mode === 2 || mode === 3;
+  if (!needsDate) return { unlockDate: null };
+  const unlockDate = document.getElementById('vault-date').value;
+  if (!unlockDate) return { error: t('vault.error_date') };
+  const parsed = parseDateInput(unlockDate);
+  if (!parsed || isNaN(parsed)) return { error: t('vault.error_date_invalid') };
+  if (parsed <= new Date()) return { error: t('vault.error_date_future') };
+  return { unlockDate };
+}
+
+async function _extractOnChainVaultId(caveau, receipt) {
+  const createLog = receipt.logs.find(l => {
+    try { return caveau.interface.parseLog(l)?.name === 'VaultCreated'; } catch { return false; }
+  });
+  if (createLog) return Number(caveau.interface.parseLog(createLog).args.vaultId);
+  const nextId = await caveau.nextVaultId();
+  return Number(nextId) - 1;
+}
+
 App.createVault = async function() {
   const name = document.getElementById('vault-name').value.trim();
   const currency = document.getElementById('vault-currency').value;
   const mode = state.selectedUnlockMode;
-  const needsDate   = mode === 0 || mode === 2 || mode === 3;
-  const needsTarget = mode === 1 || mode === 2 || mode === 3;
 
-  if (!name) return showError('vault-error', t('vault.error_name'));
-  if (!currency) return showError('vault-error', t('vault.error_currency'));
-  if (!state.walletSigner) return showError('vault-error', t('vault.error_wallet'));
+  const validationErr = _validateCreateVaultInputs(name, currency, mode);
+  if (validationErr) return showError('vault-error', validationErr);
 
-  // Check for zero MATIC → show onboarding modal
   if (!(await requireMatic())) return;
 
-  let target = 0;
-  if (needsTarget) {
-    target = parseFloat(document.getElementById('vault-target').value);
-    if (!target || target <= 0) return showError('vault-error', t('vault.error_target'));
-  }
+  const targetResult = _parseCreateVaultTarget(mode);
+  if (targetResult.error) return showError('vault-error', targetResult.error);
+  const target = targetResult.target;
 
-  let unlockDate = null;
-  if (needsDate) {
-    unlockDate = document.getElementById('vault-date').value;
-    if (!unlockDate) return showError('vault-error', t('vault.error_date'));
-    const parsed = parseDateInput(unlockDate);
-    if (!parsed || isNaN(parsed)) return showError('vault-error', t('vault.error_date_invalid'));
-    if (parsed <= new Date()) return showError('vault-error', t('vault.error_date_future'));
-  }
+  const dateResult = _parseCreateVaultDate(mode);
+  if (dateResult.error) return showError('vault-error', dateResult.error);
+  const unlockDate = dateResult.unlockDate;
 
-  // Gas check (low but not zero)
   const maticBal = await getMaticBalance();
   if (maticBal !== null && maticBal < 0.002) {
     return showError('vault-error', t('vault.error_matic', {bal: maticBal.toFixed(4)}));
@@ -2201,16 +2198,7 @@ App.createVault = async function() {
     const receipt = await createTx.wait(); recordGasCost(receipt);
 
     // Extract on-chain vault ID
-    let onChainVaultId;
-    const createLog = receipt.logs.find(l => {
-      try { return caveau.interface.parseLog(l)?.name === 'VaultCreated'; } catch { return false; }
-    });
-    if (createLog) {
-      onChainVaultId = Number(caveau.interface.parseLog(createLog).args.vaultId);
-    } else {
-      const nextId = await caveau.nextVaultId();
-      onChainVaultId = Number(nextId) - 1;
-    }
+    const onChainVaultId = await _extractOnChainVaultId(caveau, receipt);
 
     // Save locally
     const vault = {
@@ -2460,6 +2448,33 @@ App.addDeposit = async function() {
 };
 
 // ─── Withdraw Vault ──────────────────────────────────────────
+async function _preflightWithdrawCheck(contract, onChainVaultId) {
+  try {
+    const onChainUnlocked = await contract.isUnlocked(onChainVaultId);
+    if (!onChainUnlocked) {
+      const v = await contract.getVault(onChainVaultId);
+      const onChainTs = Number(v.unlockDate);
+      const block = await state.walletSigner.provider.getBlock('latest');
+      const blockTs = block.timestamp;
+      const diff = onChainTs - Number(blockTs);
+      const unlockLocal = onChainTs > 0 ? new Date(onChainTs * 1000).toLocaleString() : t('common.no_date');
+      throw new Error(t('withdraw.not_unlocked_debug', {unlockLocal, blockTime: new Date(Number(blockTs) * 1000).toLocaleString(), minutes: Math.ceil(diff/60)}));
+    }
+  } catch(preErr) {
+    if (preErr.message.includes('not_unlocked')) throw preErr;
+    console.warn('[withdrawVault] Pre-flight check failed, attempting withdraw anyway:', preErr.message);
+  }
+}
+
+function _translateWithdrawError(err) {
+  let msg = err.reason || err.shortMessage || err.message || t('common.error');
+  if (msg.includes('VaultNotUnlocked')) return t('withdraw.err_not_unlocked');
+  if (msg.includes('AlreadyWithdrawn')) return t('withdraw.err_already');
+  if (msg.includes('NotVaultOwner')) return t('withdraw.err_not_owner');
+  if (msg.includes('NoFundsToWithdraw')) return t('withdraw.err_no_funds');
+  return msg;
+}
+
 App.withdrawVault = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
@@ -2478,23 +2493,7 @@ App.withdrawVault = async function() {
 
     // Pre-flight: check if contract considers vault unlocked
     if (status) { status.textContent = t('withdraw.checking'); status.className = 'text-xs mt-2 text-center text-slate-400'; }
-    try {
-      const onChainUnlocked = await contract.isUnlocked(vault.onChainVaultId);
-      if (!onChainUnlocked) {
-        // Read on-chain data for debug info
-        const v = await contract.getVault(vault.onChainVaultId);
-        const onChainTs = Number(v.unlockDate);
-        const provider = state.walletSigner.provider;
-        const block = await provider.getBlock('latest');
-        const blockTs = block.timestamp;
-        const diff = onChainTs - Number(blockTs);
-        const unlockLocal = onChainTs > 0 ? new Date(onChainTs * 1000).toLocaleString() : t('common.no_date');
-        throw new Error(t('withdraw.not_unlocked_debug', {unlockLocal, blockTime: new Date(Number(blockTs) * 1000).toLocaleString(), minutes: Math.ceil(diff/60)}));
-      }
-    } catch(preErr) {
-      if (preErr.message.includes('not_unlocked')) throw preErr;
-      console.warn('[withdrawVault] Pre-flight check failed, attempting withdraw anyway:', preErr.message);
-    }
+    await _preflightWithdrawCheck(contract, vault.onChainVaultId);
 
     const tx = await contract.withdraw(vault.onChainVaultId);
     if (status) { status.textContent = t('withdraw.tx_sent'); status.className = 'text-xs mt-2 text-center text-yellow-400'; }
@@ -2511,12 +2510,7 @@ App.withdrawVault = async function() {
     console.error('[withdrawVault]', err);
     btn.disabled = false;
     btn.textContent = t('withdraw.btn');
-    // Translate known errors
-    let msg = err.reason || err.shortMessage || err.message || t('common.error');
-    if (msg.includes('VaultNotUnlocked')) msg = t('withdraw.err_not_unlocked');
-    else if (msg.includes('AlreadyWithdrawn')) msg = t('withdraw.err_already');
-    else if (msg.includes('NotVaultOwner')) msg = t('withdraw.err_not_owner');
-    else if (msg.includes('NoFundsToWithdraw')) msg = t('withdraw.err_no_funds');
+    const msg = _translateWithdrawError(err);
     if (status) { status.textContent = '❌ ' + msg.slice(0, 200); status.className = 'text-xs mt-2 text-center text-red-400'; }
   }
 };
@@ -2882,6 +2876,26 @@ function buildVaultChartData(vault) {
 }
 
 // ─── Settings ────────────────────────────────────────────────
+function _updateBioCardUI(supported, configured) {
+  const bioCard = document.getElementById('bio-card-settings');
+  if (!bioCard) return;
+  if (!supported) { bioCard.style.display = 'none'; return; }
+  bioCard.style.display = '';
+  const theme = configured
+    ? { bg: 'linear-gradient(135deg,rgba(16,185,129,.12),rgba(30,41,59,.5))', border: '1px solid rgba(16,185,129,.3)', iconColor: '#4ade80', titleKey: 'bio.card_active_title', titleColor: '#4ade80', descKey: 'bio.card_active_desc', descColor: '#6ee7b7', btnKey: 'bio.card_disable', btnBg: 'rgba(239,68,68,.1)', btnColor: '#fca5a5', btnBorder: '1px solid rgba(239,68,68,.25)' }
+    : { bg: 'linear-gradient(135deg,rgba(16,185,129,.06),rgba(30,41,59,.5))', border: '1px solid rgba(16,185,129,.2)', iconColor: '#10b981', titleKey: 'bio.card_title', titleColor: '#6ee7b7', descKey: 'bio.card_desc', descColor: '#94a3b8', btnKey: 'bio.card_btn', btnBg: 'rgba(16,185,129,.15)', btnColor: '#6ee7b7', btnBorder: '1px solid rgba(16,185,129,.3)' };
+  bioCard.style.background = theme.bg;
+  bioCard.style.border = theme.border;
+  const bioCardIcon = document.getElementById('bio-card-icon');
+  const bioCardTitle = document.getElementById('bio-card-title');
+  const bioCardDesc = document.getElementById('bio-card-desc');
+  const bioCardBtn = document.getElementById('bio-card-btn');
+  if (bioCardIcon) bioCardIcon.style.color = theme.iconColor;
+  if (bioCardTitle) { bioCardTitle.textContent = t(theme.titleKey); bioCardTitle.style.color = theme.titleColor; }
+  if (bioCardDesc) { bioCardDesc.textContent = t(theme.descKey); bioCardDesc.style.color = theme.descColor; }
+  if (bioCardBtn) { bioCardBtn.textContent = t(theme.btnKey); bioCardBtn.style.background = theme.btnBg; bioCardBtn.style.color = theme.btnColor; bioCardBtn.style.border = theme.btnBorder; }
+}
+
 function updateBiometricUI() {
   const status = document.getElementById('biometric-status');
   const enableBtn = document.getElementById('biometric-enable-btn');
@@ -2902,34 +2916,7 @@ function updateBiometricUI() {
   if (disableBtn) disableBtn.classList.toggle('hidden', !configured);
   if (unlockBtn) unlockBtn.classList.toggle('hidden', !supported || !configured);
 
-  // Update prominent biometric card in settings
-  const bioCard = document.getElementById('bio-card-settings');
-  const bioCardIcon = document.getElementById('bio-card-icon');
-  const bioCardTitle = document.getElementById('bio-card-title');
-  const bioCardDesc = document.getElementById('bio-card-desc');
-  const bioCardBtn = document.getElementById('bio-card-btn');
-  if (bioCard) {
-    if (!supported) {
-      bioCard.style.display = 'none';
-    } else {
-      bioCard.style.display = '';
-      if (configured) {
-        bioCard.style.background = 'linear-gradient(135deg,rgba(16,185,129,.12),rgba(30,41,59,.5))';
-        bioCard.style.border = '1px solid rgba(16,185,129,.3)';
-        if (bioCardIcon) bioCardIcon.style.color = '#4ade80';
-        if (bioCardTitle) { bioCardTitle.textContent = t('bio.card_active_title'); bioCardTitle.style.color = '#4ade80'; }
-        if (bioCardDesc) { bioCardDesc.textContent = t('bio.card_active_desc'); bioCardDesc.style.color = '#6ee7b7'; }
-        if (bioCardBtn) { bioCardBtn.textContent = t('bio.card_disable'); bioCardBtn.style.background = 'rgba(239,68,68,.1)'; bioCardBtn.style.color = '#fca5a5'; bioCardBtn.style.border = '1px solid rgba(239,68,68,.25)'; }
-      } else {
-        bioCard.style.background = 'linear-gradient(135deg,rgba(16,185,129,.06),rgba(30,41,59,.5))';
-        bioCard.style.border = '1px solid rgba(16,185,129,.2)';
-        if (bioCardIcon) bioCardIcon.style.color = '#10b981';
-        if (bioCardTitle) { bioCardTitle.textContent = t('bio.card_title'); bioCardTitle.style.color = '#6ee7b7'; }
-        if (bioCardDesc) { bioCardDesc.textContent = t('bio.card_desc'); bioCardDesc.style.color = '#94a3b8'; }
-        if (bioCardBtn) { bioCardBtn.textContent = t('bio.card_btn'); bioCardBtn.style.background = 'rgba(16,185,129,.15)'; bioCardBtn.style.color = '#6ee7b7'; bioCardBtn.style.border = '1px solid rgba(16,185,129,.3)'; }
-      }
-    }
-  }
+  _updateBioCardUI(supported, configured);
 }
 
 App.toggleBiometricFromCard = function() {
@@ -3111,50 +3098,50 @@ App.switchTab = function(tabId) {
   }
 };
 
-App._initSettingsTab = function() {
-  updateBiometricUI();
-  _loadBankDetailsUI();
+function _initSettingsAuthUI() {
   const twInfo = document.getElementById('settings-tw-info');
   const seedBtn = document.getElementById('settings-seed-btn');
   const exportKeyBtn = document.getElementById('settings-export-key-btn');
   const bioSection = document.getElementById('biometric-enable-btn')?.closest('div[style*="border-radius:16px"]');
-  if (state.isTwAuth) {
-    if (twInfo) { twInfo.classList.remove('hidden'); }
+  const isTw = state.isTwAuth;
+  if (twInfo) twInfo.classList.toggle('hidden', !isTw);
+  if (isTw) {
     const emailEl = document.getElementById('settings-tw-email');
     if (emailEl) emailEl.textContent = state.twEmail || localStorage.getItem(STORAGE.TW_EMAIL) || '—';
-    if (seedBtn) seedBtn.classList.add('hidden');
-    if (exportKeyBtn) exportKeyBtn.classList.remove('hidden');
-    if (bioSection) bioSection.classList.add('hidden');
-  } else {
-    if (twInfo) twInfo.classList.add('hidden');
-    if (seedBtn) seedBtn.classList.remove('hidden');
-    if (exportKeyBtn) exportKeyBtn.classList.add('hidden');
-    if (bioSection) bioSection.classList.remove('hidden');
   }
+  if (seedBtn) seedBtn.classList.toggle('hidden', isTw);
+  if (exportKeyBtn) exportKeyBtn.classList.toggle('hidden', !isTw);
+  if (bioSection) bioSection.classList.toggle('hidden', isTw);
+}
+
+function _initLangSelector() {
+  const langBox = document.getElementById('lang-selector');
+  if (!langBox || !window.LANG_META) return;
+  if (!langBox.options.length) {
+    getSupportedLanguages().forEach(code => {
+      const meta = LANG_META[code];
+      if (!meta) return;
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = meta.flag + '  ' + meta.name;
+      langBox.appendChild(opt);
+    });
+  }
+  langBox.value = getAppLanguage();
+}
+
+App._initSettingsTab = function() {
+  updateBiometricUI();
+  _loadBankDetailsUI();
+  _initSettingsAuthUI();
   updatePasskeyUI();
   const activeCur = getDisplayCurrency();
-  const curBtns = document.querySelectorAll('#currency-selector button');
-  curBtns.forEach(b => {
-    if (b.dataset.cur === activeCur) { b.className = 'flex-1 py-2 rounded-lg text-xs font-semibold transition-colors bg-blue-600 text-white'; }
-    else { b.className = 'flex-1 py-2 rounded-lg text-xs font-semibold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600'; }
+  document.querySelectorAll('#currency-selector button').forEach(b => {
+    b.className = b.dataset.cur === activeCur
+      ? 'flex-1 py-2 rounded-lg text-xs font-semibold transition-colors bg-blue-600 text-white'
+      : 'flex-1 py-2 rounded-lg text-xs font-semibold transition-colors bg-slate-700 text-slate-300 hover:bg-slate-600';
   });
-  /* ── Language selector ── */
-  const langBox = document.getElementById('lang-selector');
-  if (langBox && window.LANG_META) {
-    const cur = getAppLanguage();
-    const langs = getSupportedLanguages();
-    if (!langBox.options.length) {
-      langs.forEach(code => {
-        const meta = LANG_META[code];
-        if (!meta) return;
-        const opt = document.createElement('option');
-        opt.value = code;
-        opt.textContent = meta.flag + '  ' + meta.name;
-        langBox.appendChild(opt);
-      });
-    }
-    langBox.value = cur;
-  }
+  _initLangSelector();
 };
 
 App.showSettings = function() {
@@ -4040,7 +4027,7 @@ App.convertExcessPol = async function() {
     setStatus(`✅ +$${usdcReceived.toFixed(2)} USDC`, 'text-[10px] text-emerald-400 font-semibold');
     if (btn) btn.classList.add('hidden');
     await refreshWalletBalance(false);
-    await renderDashboard();
+    renderDashboard();
   } catch(err) {
     console.error('[ConvertPOL] FULL ERROR:', err);
     const reason = err?.info?.error?.message || err?.reason || err?.shortMessage || err?.message || t('common.error');
@@ -4711,47 +4698,74 @@ function hideAppLockScreen() {
   }
 }
 
+function _unlockLockScreenPin() {
+  state.pinVerifyBuffer = '';
+  syncNativePinInput('verify', '');
+  updatePinDotsVerify(0);
+  document.getElementById('pin-verify-error').classList.add('hidden');
+  state.pinVerifyCallback = async (pin) => {
+    const salt = localStorage.getItem(STORAGE.PIN_SALT);
+    try {
+      const pinKey = await deriveKeyFromString(pin, 'caveau-pin-' + salt);
+      const blob = localStorage.getItem(STORAGE.SEED_ENC);
+      if (blob) await decrypt(pinKey, blob);
+      App.closeModal('modal-pin-verify');
+      hideAppLockScreen();
+    } catch {
+      state.pinVerifyBuffer = '';
+      syncNativePinInput('verify', '');
+      updatePinDotsVerify(0);
+      showError('pin-verify-error', t('pin.wrong'));
+    }
+  };
+  App.openModal('modal-pin-verify');
+  setTimeout(() => document.getElementById('pin-native-verify')?.focus(), 120);
+}
+
 App.unlockLockScreen = async function(method) {
   if (method === 'bio') {
     try {
-      if (isTwUser()) {
-        // TW user: pure WebAuthn verification, no PIN
-        await verifyBiometric();
-      } else {
-        // Classic user: biometric decrypts PIN
-        await App.unlockWithBiometric();
-      }
+      await (isTwUser() ? verifyBiometric() : App.unlockWithBiometric());
       hideAppLockScreen();
     } catch {
       // Biometric failed — TW user can retry, classic user can try PIN
     }
   } else {
-    // PIN flow (classic users only): use the existing pin-verify modal
-    state.pinVerifyBuffer = '';
-    syncNativePinInput('verify', '');
-    updatePinDotsVerify(0);
-    document.getElementById('pin-verify-error').classList.add('hidden');
-    state.pinVerifyCallback = async (pin) => {
-      const salt = localStorage.getItem(STORAGE.PIN_SALT);
-      try {
-        const pinKey = await deriveKeyFromString(pin, 'caveau-pin-' + salt);
-        const blob = localStorage.getItem(STORAGE.SEED_ENC);
-        if (blob) await decrypt(pinKey, blob); // verify PIN is correct
-        App.closeModal('modal-pin-verify');
-        hideAppLockScreen();
-      } catch {
-        state.pinVerifyBuffer = '';
-        syncNativePinInput('verify', '');
-        updatePinDotsVerify(0);
-        showError('pin-verify-error', t('pin.wrong'));
-      }
-    };
-    App.openModal('modal-pin-verify');
-    setTimeout(() => document.getElementById('pin-native-verify')?.focus(), 120);
+    _unlockLockScreenPin();
   }
 };
 
 // ─── Init ────────────────────────────────────────────────────
+function _initTwSession() {
+  if (isBioConfigured()) {
+    showAppLockScreen();
+    state._twDashboardPending = true;
+  } else {
+    showDashboard();
+    maybePromptBiometricOptInTw();
+  }
+}
+
+function _initClassicSession() {
+  clearTwStorage();
+  const savedAddress = localStorage.getItem(STORAGE.ADDRESS);
+  const seedBlob = localStorage.getItem(STORAGE.SEED_ENC);
+  if (savedAddress && seedBlob) {
+    document.getElementById('unlock-address-short').textContent = savedAddress.slice(0,6) + '…' + savedAddress.slice(-4);
+    showScreen('screen-unlock');
+    updateBiometricUI();
+    const hasBio = hasBiometricCapability() && !!localStorage.getItem(STORAGE.BIO_CRED_ID) && !!localStorage.getItem(STORAGE.BIO_PIN_ENC);
+    if (hasBio) setTimeout(() => App.unlockWithBiometric(), 400);
+  } else {
+    showScreen('screen-welcome');
+    const passkeyBtn = document.getElementById('btn-tw-passkey');
+    const passkeyEmail = localStorage.getItem('caveau_tw_passkey_email');
+    if (passkeyBtn && passkeyEmail) {
+      passkeyBtn.classList.remove('hidden');
+      passkeyBtn.textContent = t('tw.login_as', {email: passkeyEmail});
+    }
+  }
+}
 
 (async function init() {
   // Initialize Framework7
@@ -4787,40 +4801,9 @@ App.unlockLockScreen = async function(method) {
   // Check for Thirdweb session first
   const twRestored = await tryTwSessionRestore();
   if (twRestored) {
-    // TW session OK — biometric gate if configured, else straight to dashboard
-    if (isBioConfigured()) {
-      // Show lock screen with biometric only (no PIN)
-      showAppLockScreen();
-      // Dashboard will show after biometric verification succeeds
-      state._twDashboardPending = true;
-    } else {
-      showDashboard();
-      maybePromptBiometricOptInTw();
-    }
+    _initTwSession();
   } else {
-    // Clean any stale storage on fresh start at welcome screen
-    clearTwStorage();
-    // Fallback to classic PIN-based auth check
-    const savedAddress = localStorage.getItem(STORAGE.ADDRESS);
-    const seedBlob = localStorage.getItem(STORAGE.SEED_ENC);
-    if (savedAddress && seedBlob) {
-      const short = savedAddress.slice(0,6) + '…' + savedAddress.slice(-4);
-      document.getElementById('unlock-address-short').textContent = short;
-      showScreen('screen-unlock');
-      updateBiometricUI();
-      // Auto-trigger biometric on cold start if configured (classic users only)
-      const hasBio = hasBiometricCapability() && !!localStorage.getItem(STORAGE.BIO_CRED_ID) && !!localStorage.getItem(STORAGE.BIO_PIN_ENC);
-      if (hasBio) setTimeout(() => App.unlockWithBiometric(), 400);
-    } else {
-      showScreen('screen-welcome');
-      // Show passkey login button if a passkey was enrolled on this device
-      const passkeyBtn = document.getElementById('btn-tw-passkey');
-      const passkeyEmail = localStorage.getItem('caveau_tw_passkey_email');
-      if (passkeyBtn && passkeyEmail) {
-        passkeyBtn.classList.remove('hidden');
-        passkeyBtn.textContent = t('tw.login_as', {email: passkeyEmail});
-      }
-    }
+    _initClassicSession();
   }
 
   window.addEventListener('pageshow', () => {
