@@ -228,7 +228,7 @@ vercel --prod --yes
 
 - **You CAN**: read, audit, learn from, and use for personal/non-commercial purposes
 - **You CANNOT**: fork, deploy, or commercialize without permission
-- **After March 4, 2028**: automatically converts to GPL-2.0 (fully open source)
+- **After March 4, 2030**: automatically converts to GPL-2.0 (fully open source)
 
 See [`LICENSE`](./LICENSE) for full terms.
 
