@@ -30,7 +30,7 @@ PiggyVault is a personal interface for the **time-lock savings protocol** on Pol
 - Create multiple vaults with different goals (🏠 House, 🚗 Car, ✈️ Vacation, 💍 Wedding...)
 - Set a target amount, unlock date, or both
 - Choose between **Base Vault** (0% risk) or **Interest Vault** (~3-7% APY via Aave V3)
-- Deposit stablecoins (USDC, DAI, USDT, EURe, ZCHF) directly or swap any ERC-20 token
+- Deposit stablecoins (USDC, EURe, ZCHF) directly or swap any ERC-20 token
 - Send cross-chain from BTC, ETH, SOL, LTC, DOGE via SideShift
 - Buy crypto with bank transfer or card via Mt Pelerin fiat on-ramp
 - Withdraw to an external wallet or sell to your bank account (SEPA)
@@ -91,8 +91,6 @@ Both contracts are **non-upgradeable** and have **no admin functions**. Once dep
 | Token | Address | Aave V3 |
 |---|---|---|
 | USDC (native) | `0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359` | ✅ |
-| DAI | `0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063` | ✅ |
-| USDT | `0xc2132D05D31c914a87C6611C10748AEb04B58e8F` | ✅ |
 | EURe | `0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6` | ❌ |
 | ZCHF | `0x02567e4b14b25549331fcee2b56c647a8bab16fd` | ❌ |
 
