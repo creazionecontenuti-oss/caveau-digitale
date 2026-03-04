@@ -210,7 +210,7 @@ function renderVaultIcon(icon, size, showGradient) {
 }
 
 function adjustColor(hex, amount) {
-  const num = parseInt(hex.replace('#',''), 16);
+  const num = Number.parseInt(hex.replace('#',''), 16);
   const r = Math.min(255, Math.max(0, (num >> 16) + amount));
   const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
   const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
@@ -976,7 +976,7 @@ async function refreshWalletBalance(silent) {
     const displayTotal = convertFromUsd(total, cur);
     const el = document.getElementById('wallet-balance-amount');
     if (el) {
-      const prev = parseFloat(el.textContent) || 0;
+      const prev = Number.parseFloat(el.textContent) || 0;
       el.textContent = displayTotal.toFixed(2);
       // Flash green if balance increased
       if (displayTotal > prev + 0.01) {
@@ -1169,7 +1169,7 @@ App.setWithdrawPercent = function(pct) {
 };
 
 App.setWithdrawAmountCustom = function(val) {
-  _withdraw.amount = parseFloat(val) || 0;
+  _withdraw.amount = Number.parseFloat(val) || 0;
   document.querySelectorAll('.withdraw-preset').forEach(b => { b.style.background = ''; b.style.borderColor = ''; });
   if (_withdraw.amount > _withdraw.totalUsd) {
     document.getElementById('withdraw-amount-hint').textContent = t('withdraw.exceeds');
@@ -1396,7 +1396,7 @@ App.validateWithdrawAddr = function(val) {
 
 App.executeWalletTransfer = async function() {
   const tk = document.getElementById('withdraw-send-token').value;
-  const amount = parseFloat(document.getElementById('withdraw-send-amount').value);
+  const amount = Number.parseFloat(document.getElementById('withdraw-send-amount').value);
   const dest = document.getElementById('withdraw-send-addr').value.trim();
   const statusEl = document.getElementById('withdraw-send-status');
   const btn = document.getElementById('withdraw-send-btn');
@@ -1461,7 +1461,7 @@ function _isValidIban(iban) {
   }).join('');
   let remainder = 0;
   for (let i = 0; i < numStr.length; i++) {
-    remainder = (remainder * 10 + parseInt(numStr[i])) % 97;
+    remainder = (remainder * 10 + Number.parseInt(numStr[i])) % 97;
   }
   return remainder === 1;
 }
@@ -1565,7 +1565,7 @@ App.setOnrampAmount = function(val) {
 };
 
 App.setOnrampAmountCustom = function(val) {
-  _onramp.amount = parseFloat(val) || 0;
+  _onramp.amount = Number.parseFloat(val) || 0;
   document.querySelectorAll('.onramp-preset').forEach(b => b.classList.remove('bg-blue-600','border-blue-500'));
 };
 
@@ -2108,7 +2108,7 @@ function _validateCreateVaultInputs(name, currency, mode) {
 function _parseCreateVaultTarget(mode) {
   const needsTarget = mode === 1 || mode === 2 || mode === 3;
   if (!needsTarget) return { target: 0 };
-  const target = parseFloat(document.getElementById('vault-target').value);
+  const target = Number.parseFloat(document.getElementById('vault-target').value);
   if (!target || target <= 0) return { error: t('vault.error_target') };
   return { target };
 }
@@ -2119,7 +2119,7 @@ function _parseCreateVaultDate(mode) {
   const unlockDate = document.getElementById('vault-date').value;
   if (!unlockDate) return { error: t('vault.error_date') };
   const parsed = parseDateInput(unlockDate);
-  if (!parsed || isNaN(parsed)) return { error: t('vault.error_date_invalid') };
+  if (!parsed || Number.isNaN(+parsed)) return { error: t('vault.error_date_invalid') };
   if (parsed <= new Date()) return { error: t('vault.error_date_future') };
   return { unlockDate };
 }
@@ -2420,7 +2420,7 @@ function renderTxList(vault) {
 }
 
 App.addDeposit = async function() {
-  const amount = parseFloat(document.getElementById('deposit-amount').value);
+  const amount = Number.parseFloat(document.getElementById('deposit-amount').value);
   if (!amount || amount <= 0) return;
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
@@ -2600,7 +2600,7 @@ async function fetchPolPrice() {
   try {
     const resp = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=POLUSDT');
     const data = await resp.json();
-    if (data.price) { _polPriceUsd = parseFloat(data.price); return _polPriceUsd; }
+    if (data.price) { _polPriceUsd = Number.parseFloat(data.price); return _polPriceUsd; }
   } catch(e) { console.warn('[Rates] Binance POL failed:', e); }
   return _polPriceUsd;
 }
@@ -2631,7 +2631,7 @@ function convertFromUsd(usdAmount, cur) {
 function fmtDisplayAmount(usdAmount, decimals) {
   const cur = getDisplayCurrency();
   const val = convertFromUsd(usdAmount, cur);
-  if (decimals === undefined) decimals = cur === 'POL' ? 2 : 2;
+  if (decimals === undefined) decimals = 2;
   return val.toFixed(decimals);
 }
 
@@ -3254,7 +3254,7 @@ App.selectDonation = function(amt) {
 App.confirmDonation = function() {
   let amount = _donateAmount;
   if (amount === 0) {
-    const custom = parseFloat(document.getElementById('donate-custom-input').value);
+    const custom = Number.parseFloat(document.getElementById('donate-custom-input').value);
     if (!custom || custom <= 0) { f7app.dialog.alert(t('donate.error_amount')); return; }
     amount = custom;
   }
@@ -3453,7 +3453,7 @@ App.showCaveauLock = async function() {
     if (ccIdx >= 0) { App.openCrossChainModal(); App.selectCrossChainCoin(ccIdx); return; }
   }
 
-  const amount = parseFloat(document.getElementById('deposit-amount').value);
+  const amount = Number.parseFloat(document.getElementById('deposit-amount').value);
   if (!amount || amount <= 0) { showError('deposit-error', t('deposit.error_amount')); return; }
   state.currentLockAmount = amount;
 
@@ -3698,7 +3698,7 @@ App.fetchSwapPreview = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
   const srcSymbol = document.getElementById('deposit-src-token').value;
-  const amount = parseFloat(document.getElementById('deposit-amount').value);
+  const amount = Number.parseFloat(document.getElementById('deposit-amount').value);
   if (!amount || amount <= 0) return;
   const srcToken = SWAP_TOKENS.find(t => t.symbol === srcSymbol);
   if (!srcToken) return;
@@ -3879,7 +3879,7 @@ App.pollShiftStatus = async function(shiftId, vault) {
       if (shift.settleAmount) {
         vault.transactions.push({
           id: uid(), date: new Date().toISOString(),
-          amount: parseFloat(shift.settleAmount),
+          amount: Number.parseFloat(shift.settleAmount),
           txHash: shift.settleHash || 'sideshift-' + shiftId, onChain: false, crossChain: true
         });
         await saveVaults();
@@ -4130,7 +4130,7 @@ function vaultTotal(vault) {
 function daysUntil(dateStr) {
   if (!dateStr) return Infinity;
   const d = parseDateInput(dateStr);
-  if (!d || isNaN(d)) return Infinity;
+  if (!d || Number.isNaN(+d)) return Infinity;
   return Math.ceil((d - new Date()) / 86400000);
 }
 
@@ -4184,7 +4184,7 @@ function parseDateInput(dateStr) {
 
 function fmtDate(dateStr) {
   const d = parseDateInput(dateStr);
-  if (!d || isNaN(d)) return '—';
+  if (!d || Number.isNaN(+d)) return '—';
   const hasTime = dateStr && dateStr.includes('T') && !dateStr.endsWith('T00:00');
   const opts = { day:'2-digit', month:'short', year:'numeric' };
   if (hasTime) { opts.hour = '2-digit'; opts.minute = '2-digit'; }
@@ -4193,7 +4193,7 @@ function fmtDate(dateStr) {
 
 function fmtDateShort(dateStr) {
   const d = parseDateInput(dateStr);
-  if (!d || isNaN(d)) return '—';
+  if (!d || Number.isNaN(+d)) return '—';
   return d.toLocaleDateString('it-IT', { month:'short', year:'2-digit' });
 }
 

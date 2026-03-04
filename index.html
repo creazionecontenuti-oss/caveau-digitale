@@ -481,7 +481,7 @@
     <p class="text-slate-400 text-sm mb-2" data-i18n="otp.sent_to">Abbiamo inviato un codice a:</p>
     <p class="text-white font-semibold mb-6" id="tw-otp-email-display">—</p>
     <div class="input-outline mb-3">
-      <input id="tw-otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" class="outline-input" style="text-align:center;letter-spacing:0.4em;font-family:monospace;font-size:22px" placeholder=" ">
+      <input id="tw-otp-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" class="outline-input" style="text-align:center;letter-spacing:0.4em;font-family:monospace;font-size:22px" placeholder=" ">
       <span class="floating-label" style="left:50%;transform:translate(-50%,-50%);text-align:center" data-i18n="otp.placeholder">Codice a 6 cifre</span>
     </div>
     <div id="tw-otp-error" class="hidden bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-xl mb-3"></div>
@@ -526,7 +526,7 @@
     <h2 class="text-2xl font-bold mb-1" id="set-pin-title" data-i18n="pin.create_title">Crea il tuo PIN</h2>
     <p class="text-slate-400 text-sm mb-8" id="set-pin-desc" data-i18n="pin.create_desc">Scegli 6 numeri per aprire la tua app velocemente.</p>
     <div class="input-outline mb-4">
-      <input id="pin-native-set" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" enterkeyhint="done" maxlength="6"
+      <input id="pin-native-set" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" maxlength="6"
         class="outline-input" style="text-align:center;letter-spacing:0.35em;font-family:monospace;font-size:20px" placeholder=" "
         oninput="App.onPinNativeInput('set', this.value)">
       <span class="floating-label" style="left:50%;transform:translate(-50%,-50%);text-align:center" data-i18n="pin.label">6 cifre</span>
@@ -547,7 +547,7 @@
     <p class="text-slate-500 text-xs mb-1" id="unlock-address-short"></p>
     <p class="text-slate-400 text-sm mb-8" data-i18n="unlock.desc">Inserisci il tuo PIN per entrare</p>
     <div class="input-outline mb-3">
-      <input id="pin-native-unlock" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" enterkeyhint="done" maxlength="6"
+      <input id="pin-native-unlock" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" maxlength="6"
         class="outline-input" style="text-align:center;letter-spacing:0.35em;font-family:monospace;font-size:20px" placeholder=" "
         oninput="App.onPinNativeInput('unlock', this.value)">
       <span class="floating-label" style="left:50%;transform:translate(-50%,-50%);text-align:center" data-i18n="unlock.label">PIN</span>
@@ -936,12 +936,12 @@
       </div>
       <p style="font-size:11px;color:#94a3b8;margin-bottom:10px" data-i18n="settings.bank_desc">Per velocizzare i ritiri su conto corrente. I dati restano solo sul tuo dispositivo.</p>
       <div style="margin-bottom:8px">
-        <label style="font-size:11px;color:#94a3b8;font-weight:600;display:block;margin-bottom:4px" data-i18n="settings.bank_name_label">Nome e Cognome (intestatario)</label>
+        <label for="settings-bank-name" style="font-size:11px;color:#94a3b8;font-weight:600;display:block;margin-bottom:4px" data-i18n="settings.bank_name_label">Nome e Cognome (intestatario)</label>
         <input id="settings-bank-name" type="text" placeholder="Mario Rossi" oninput="App.saveBankDetails()"
           style="width:100%;background:rgba(15,23,42,.5);border:1px solid rgba(71,85,105,.4);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;outline:none">
       </div>
       <div>
-        <label style="font-size:11px;color:#94a3b8;font-weight:600;display:block;margin-bottom:4px">IBAN</label>
+        <label for="settings-bank-iban" style="font-size:11px;color:#94a3b8;font-weight:600;display:block;margin-bottom:4px">IBAN</label>
         <input id="settings-bank-iban" type="text" placeholder="IT60X0542811101000000123456" oninput="App.saveBankDetails()" maxlength="34"
           style="width:100%;background:rgba(15,23,42,.5);border:1px solid rgba(71,85,105,.4);border-radius:10px;padding:10px 12px;color:#fff;font-size:13px;font-family:ui-monospace,monospace;outline:none;letter-spacing:.5px;text-transform:uppercase">
         <p id="settings-iban-hint" class="text-[11px] mt-1"></p>
@@ -1187,7 +1187,7 @@
     <div class="vault-detail-hero" style="text-align:center;padding:20px 20px 18px;position:relative;overflow:hidden;background:transparent">
       <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.06) 0%,transparent 70%);animation:heroOrb 6s ease-in-out infinite;pointer-events:none"></div>
       <div id="detail-icon" style="display:flex;align-items:center;justify-content:center;margin:0 auto 10px;position:relative;z-index:1"></div>
-      <h3 id="detail-title" style="font-size:22px;font-weight:800;margin:0 0 4px;color:#f1f5f9;position:relative;z-index:1;letter-spacing:-.02em"></h3>
+      <h3 id="detail-title" style="font-size:22px;font-weight:800;margin:0 0 4px;color:#f1f5f9;position:relative;z-index:1;letter-spacing:-.02em" data-i18n="common.vault">Vault</h3>
       <p id="detail-amount" style="font-size:28px;font-weight:700;color:#fff;margin:6px 0 0;position:relative;z-index:1;letter-spacing:-.03em"></p>
       <p id="detail-currency-label" style="font-size:11px;color:#64748b;margin-top:3px;text-transform:uppercase;letter-spacing:.08em;position:relative;z-index:1"></p>
     </div>
@@ -1329,8 +1329,8 @@
 </div>
 
 <!-- MODAL: PANIC -->
-<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" onclick="App.closeModal('modal-panic')">
-  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in" onclick="event.stopPropagation()">
+<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-panic')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-panic');}">
+  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in" role="document" onclick="event.stopPropagation()">
     <div class="mb-4" style="width:80px;height:80px;margin-left:auto;margin-right:auto;border-radius:50%;background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(239,68,68,.1));display:flex;align-items:center;justify-content:center"><i class="f7-icons" style="font-size:40px;color:#f87171">lock_fill</i></div>
     <h3 class="text-2xl font-bold text-red-400 mb-2" data-i18n="panic.title">Non si può aprire!</h3>
     <p class="text-slate-300 mb-2" data-i18n="panic.line1">Questo è esattamente il punto.</p>
@@ -1342,8 +1342,8 @@
 
 <!-- Settings modal removed — content is now in tab-settings -->
 <!-- MODAL: PASSKEY ENROLLMENT PROMPT -->
-<div id="modal-passkey-prompt" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-center justify-center p-4" onclick="App.dismissPasskeyPrompt()">
-  <div class="bg-slate-800 border border-purple-500/30 rounded-3xl w-full max-w-sm p-6 text-center" onclick="event.stopPropagation()">
+<div id="modal-passkey-prompt" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-center justify-center p-4" role="dialog" aria-modal="true" tabindex="-1" onclick="App.dismissPasskeyPrompt()" onkeydown="if(event.key==='Escape'){event.preventDefault();App.dismissPasskeyPrompt();}">
+  <div class="bg-slate-800 border border-purple-500/30 rounded-3xl w-full max-w-sm p-6 text-center" role="document" onclick="event.stopPropagation()">
     <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
       <i class="f7-icons" style="font-size:28px;color:#a78bfa">lock_shield_fill</i>
     </div>
@@ -1391,7 +1391,7 @@
           <p style="color:#fca5a5;font-size:12px;font-weight:600;margin:0" data-i18n="export.warning">⚠️ Chi ha questa chiave ha accesso ai tuoi fondi. Non condividerla con nessuno!</p>
         </div>
         <div style="background:rgba(15,23,42,.6);border:1px solid rgba(71,85,105,.3);border-radius:12px;padding:14px;margin-bottom:12px;position:relative">
-          <p id="export-key-value" style="font-family:ui-monospace,monospace;font-size:11px;word-break:break-all;color:#60a5fa;line-height:1.6;margin:0;filter:blur(4px);transition:filter .3s" onclick="this.style.filter=this.style.filter?'':'blur(4px)'"></p>
+          <p id="export-key-value" role="button" tabindex="0" style="font-family:ui-monospace,monospace;font-size:11px;word-break:break-all;color:#60a5fa;line-height:1.6;margin:0;filter:blur(4px);transition:filter .3s" onclick="this.style.filter=this.style.filter?'':'blur(4px)'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.style.filter=this.style.filter?'':'blur(4px)';}"></p>
           <p style="text-align:center;color:#475569;font-size:10px;margin:6px 0 0" data-i18n="export.tap_reveal">Tocca per mostrare/nascondere</p>
         </div>
         <button onclick="App.copyExportedKey()" class="btn-secondary" style="margin-bottom:8px" data-i18n="export.copy">📋 Copia chiave privata</button>
@@ -1764,12 +1764,12 @@
 </div>
 
 <!-- MODAL: PIN VERIFY -->
-<div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" onclick="App.closeModal('modal-pin-verify')">
-  <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center" onclick="event.stopPropagation()">
+<div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-pin-verify')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-pin-verify');}">
+  <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center" role="document" onclick="event.stopPropagation()">
     <div class="text-4xl mb-3">🔑</div>
     <h3 class="text-lg font-bold mb-1" data-i18n="pin.confirm_title">Conferma PIN</h3>
     <p class="text-slate-400 text-sm mb-6" data-i18n="pin.confirm_desc">Inserisci il PIN per continuare</p>
-    <input id="pin-native-verify" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" enterkeyhint="done" maxlength="6"
+    <input id="pin-native-verify" type="tel" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" maxlength="6"
       class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-0 focus-visible:outline-none rounded-xl px-4 py-2.5 text-center tracking-[0.35em] font-mono text-base text-white focus:outline-none mb-3"
       placeholder="------" oninput="App.onPinNativeInput('verify', this.value)">
     <div class="flex justify-center gap-3 mb-4" id="pin-dots-verify">
@@ -1781,8 +1781,8 @@
 </div>
 
 <!-- MODAL: BIOMETRIC OPT-IN -->
-<div id="modal-biometric-optin" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" onclick="App.closeModal('modal-biometric-optin')">
-  <div class="bg-slate-900 rounded-3xl w-full max-w-sm p-6 text-center border border-emerald-500/30" onclick="event.stopPropagation()">
+<div id="modal-biometric-optin" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-biometric-optin')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-biometric-optin');}">
+  <div class="bg-slate-900 rounded-3xl w-full max-w-sm p-6 text-center border border-emerald-500/30" role="document" onclick="event.stopPropagation()">
     <div class="text-4xl mb-3">🧬</div>
     <h3 class="text-lg font-bold mb-1" data-i18n="biometric.title">Vuoi attivare Face ID / Biometria?</h3>
     <p class="text-slate-400 text-sm mb-5" data-i18n="biometric.desc">Così puoi sbloccare l'app più velocemente senza digitare il PIN ogni volta.</p>
@@ -1804,7 +1804,7 @@
     <div class="sheet-body">
       <p class="text-slate-400 text-xs mb-4">Hai Bitcoin, Ethereum o altre crypto? Inviale qui e arriveranno automaticamente come <span id="cc-dest-currency" class="font-bold text-white">dollari digitali</span> nel tuo salvadanaio.</p>
       <div id="cc-step-select" class="">
-        <label class="section-label">Scegli la crypto da inviare</label>
+        <p class="section-label">Scegli la crypto da inviare</p>
         <div id="cc-coin-grid" class="grid grid-cols-2 gap-2 mb-4"></div>
       </div>
       <div id="cc-step-address" class="hidden">
@@ -1864,7 +1864,7 @@
 
 <!-- MODAL: MATIC ONBOARDING (first-time gas setup) -->
 <div id="modal-matic-onboard" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] items-center justify-center p-4">
-  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-amber-500/30 max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-amber-500/30 max-h-[92vh] overflow-y-auto" role="document" onclick="event.stopPropagation()">
     <div class="p-6">
       <div class="text-center mb-5">
         <img src="icona-app-quadrata.webp" alt="PiggyVault" class="w-16 h-16 mx-auto mb-2 rounded-xl">
