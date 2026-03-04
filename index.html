@@ -585,7 +585,7 @@
       </div>
       <div class="title">PiggyVault</div>
       <div class="right">
-        <a href="#" class="link" onclick="App.openOnramp();return false"><i class="f7-icons">plus_circle_fill</i><span data-i18n="home.recharge">Ricarica</span></a>
+        <button class="link" onclick="App.openOnramp()"><i class="f7-icons">plus_circle_fill</i><span data-i18n="home.recharge">Ricarica</span></button>
       </div>
     </div>
   </div>
@@ -1329,8 +1329,8 @@
 </div>
 
 <!-- MODAL: PANIC -->
-<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-panic')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-panic');}">
-  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in" role="document" onclick="event.stopPropagation()">
+<div id="modal-panic" class="modal-overlay fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="bg-slate-900 border-2 border-red-500/40 rounded-3xl p-8 max-w-sm text-center fade-in">
     <div class="mb-4" style="width:80px;height:80px;margin-left:auto;margin-right:auto;border-radius:50%;background:linear-gradient(135deg,rgba(239,68,68,.2),rgba(239,68,68,.1));display:flex;align-items:center;justify-content:center"><i class="f7-icons" style="font-size:40px;color:#f87171">lock_fill</i></div>
     <h3 class="text-2xl font-bold text-red-400 mb-2" data-i18n="panic.title">Non si può aprire!</h3>
     <p class="text-slate-300 mb-2" data-i18n="panic.line1">Questo è esattamente il punto.</p>
@@ -1342,8 +1342,8 @@
 
 <!-- Settings modal removed — content is now in tab-settings -->
 <!-- MODAL: PASSKEY ENROLLMENT PROMPT -->
-<div id="modal-passkey-prompt" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-center justify-center p-4" role="dialog" aria-modal="true" tabindex="-1" onclick="App.dismissPasskeyPrompt()" onkeydown="if(event.key==='Escape'){event.preventDefault();App.dismissPasskeyPrompt();}">
-  <div class="bg-slate-800 border border-purple-500/30 rounded-3xl w-full max-w-sm p-6 text-center" role="document" onclick="event.stopPropagation()">
+<div id="modal-passkey-prompt" class="modal-overlay fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] items-center justify-center p-4" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="bg-slate-800 border border-purple-500/30 rounded-3xl w-full max-w-sm p-6 text-center">
     <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
       <i class="f7-icons" style="font-size:28px;color:#a78bfa">lock_shield_fill</i>
     </div>
@@ -1391,7 +1391,7 @@
           <p style="color:#fca5a5;font-size:12px;font-weight:600;margin:0" data-i18n="export.warning">⚠️ Chi ha questa chiave ha accesso ai tuoi fondi. Non condividerla con nessuno!</p>
         </div>
         <div style="background:rgba(15,23,42,.6);border:1px solid rgba(71,85,105,.3);border-radius:12px;padding:14px;margin-bottom:12px;position:relative">
-          <p id="export-key-value" role="button" tabindex="0" style="font-family:ui-monospace,monospace;font-size:11px;word-break:break-all;color:#60a5fa;line-height:1.6;margin:0;filter:blur(4px);transition:filter .3s" onclick="this.style.filter=this.style.filter?'':'blur(4px)'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.style.filter=this.style.filter?'':'blur(4px)';}"></p>
+          <button id="export-key-value" style="font-family:ui-monospace,monospace;font-size:11px;word-break:break-all;color:#60a5fa;line-height:1.6;margin:0;filter:blur(4px);transition:filter .3s;background:none;border:none;padding:0;cursor:pointer;text-align:left;width:100%" onclick="this.style.filter=this.style.filter?'':'blur(4px)'"></button>
           <p style="text-align:center;color:#475569;font-size:10px;margin:6px 0 0" data-i18n="export.tap_reveal">Tocca per mostrare/nascondere</p>
         </div>
         <button onclick="App.copyExportedKey()" class="btn-secondary" style="margin-bottom:8px" data-i18n="export.copy">📋 Copia chiave privata</button>
@@ -1764,8 +1764,8 @@
 </div>
 
 <!-- MODAL: PIN VERIFY -->
-<div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-pin-verify')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-pin-verify');}">
-  <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center" role="document" onclick="event.stopPropagation()">
+<div id="modal-pin-verify" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="bg-slate-900 rounded-3xl w-full max-w-xs p-6 text-center">
     <div class="text-4xl mb-3">🔑</div>
     <h3 class="text-lg font-bold mb-1" data-i18n="pin.confirm_title">Conferma PIN</h3>
     <p class="text-slate-400 text-sm mb-6" data-i18n="pin.confirm_desc">Inserisci il PIN per continuare</p>
@@ -1781,8 +1781,8 @@
 </div>
 
 <!-- MODAL: BIOMETRIC OPT-IN -->
-<div id="modal-biometric-optin" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1" onclick="App.closeModal('modal-biometric-optin')" onkeydown="if(event.key==='Escape'){event.preventDefault();App.closeModal('modal-biometric-optin');}">
-  <div class="bg-slate-900 rounded-3xl w-full max-w-sm p-6 text-center border border-emerald-500/30" role="document" onclick="event.stopPropagation()">
+<div id="modal-biometric-optin" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] items-center justify-center p-6" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="bg-slate-900 rounded-3xl w-full max-w-sm p-6 text-center border border-emerald-500/30">
     <div class="text-4xl mb-3">🧬</div>
     <h3 class="text-lg font-bold mb-1" data-i18n="biometric.title">Vuoi attivare Face ID / Biometria?</h3>
     <p class="text-slate-400 text-sm mb-5" data-i18n="biometric.desc">Così puoi sbloccare l'app più velocemente senza digitare il PIN ogni volta.</p>
@@ -1864,7 +1864,7 @@
 
 <!-- MODAL: MATIC ONBOARDING (first-time gas setup) -->
 <div id="modal-matic-onboard" class="modal-overlay fixed inset-0 bg-black/80 backdrop-blur-sm z-[80] items-center justify-center p-4">
-  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-amber-500/30 max-h-[92vh] overflow-y-auto" role="document" onclick="event.stopPropagation()">
+  <div class="bg-slate-800 rounded-3xl w-full max-w-md border border-amber-500/30 max-h-[92vh] overflow-y-auto">
     <div class="p-6">
       <div class="text-center mb-5">
         <img src="icona-app-quadrata.webp" alt="PiggyVault" class="w-16 h-16 mx-auto mb-2 rounded-xl">

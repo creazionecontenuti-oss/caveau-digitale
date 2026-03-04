@@ -477,14 +477,14 @@ function uid() {
 
 function bytesToBase64(bytes) {
   let binary = '';
-  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  bytes.forEach(b => { binary += String.fromCodePoint(b); });
   return btoa(binary);
 }
 
 function base64ToBytes(b64) {
   const binary = atob(b64);
   const out = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i);
+  for (let i = 0; i < binary.length; i += 1) out[i] = binary.codePointAt(i);
   return out;
 }
 
@@ -750,7 +750,7 @@ function syncNativePinInput(context, val) {
 }
 
 App.onPinNativeInput = function(context, rawValue) {
-  const val = String(rawValue || '').replace(/\D/g, '').slice(0, 6);
+  const val = String(rawValue || '').replaceAll(/\D/g, '').slice(0, 6);
   syncNativePinInput(context, val);
 
   if (context === 'verify') {
@@ -1301,7 +1301,7 @@ async function _openMtPelerinSell(usdcAmount) {
       const message = 'MtPelerin-' + code;
       const sigHex = await state.walletSigner.signMessage(message);
       const sigBytes = ethers.getBytes(sigHex);
-      const hash = btoa(String.fromCharCode.apply(null, sigBytes));
+      const hash = btoa(String.fromCodePoint(...sigBytes));
       opts.addr = state.address;
       opts.code = code;
       opts.hash = hash;
@@ -1450,13 +1450,13 @@ App.executeWalletTransfer = async function() {
 // ─── Bank details (settings) ────────────────────────────────
 function _isValidIban(iban) {
   if (!iban) return false;
-  iban = iban.replace(/\s/g, '').toUpperCase();
+  iban = iban.replaceAll(/\s/g, '').toUpperCase();
   if (iban.length < 15 || iban.length > 34) return false;
   if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(iban)) return false;
   // Basic IBAN checksum validation (mod 97)
   const rearranged = iban.slice(4) + iban.slice(0, 4);
   const numStr = rearranged.split('').map(c => {
-    const code = c.charCodeAt(0);
+    const code = c.codePointAt(0);
     return code >= 65 ? String(code - 55) : c;
   }).join('');
   let remainder = 0;
@@ -1468,7 +1468,7 @@ function _isValidIban(iban) {
 
 App.saveBankDetails = function() {
   const name = (document.getElementById('settings-bank-name')?.value || '').trim();
-  const iban = (document.getElementById('settings-bank-iban')?.value || '').trim().replace(/\s/g, '').toUpperCase();
+  const iban = (document.getElementById('settings-bank-iban')?.value || '').trim().replaceAll(/\s/g, '').toUpperCase();
   localStorage.setItem(STORAGE.BANK_NAME, name);
   localStorage.setItem(STORAGE.BANK_IBAN, iban);
   _updateBankStatusUI(name, iban);
@@ -1759,7 +1759,7 @@ App.openMtPelerin = async function() {
       const message = 'MtPelerin-' + code;
       const sigHex = await state.walletSigner.signMessage(message);
       const sigBytes = ethers.getBytes(sigHex);
-      const hash = btoa(String.fromCharCode.apply(null, sigBytes));
+      const hash = btoa(String.fromCodePoint(...sigBytes));
       baseOpts.addr = state.address;
       baseOpts.code = code;
       baseOpts.hash = hash;
@@ -4729,6 +4729,21 @@ function _initClassicSession() {
   }
 }
 
+function _initModalBackdropClose() {
+  const modals = [
+    { id: 'modal-panic', close: () => App.closeModal('modal-panic') },
+    { id: 'modal-passkey-prompt', close: () => App.dismissPasskeyPrompt() },
+    { id: 'modal-pin-verify', close: () => App.closeModal('modal-pin-verify') },
+    { id: 'modal-biometric-optin', close: () => App.closeModal('modal-biometric-optin') },
+  ];
+  modals.forEach(({ id, close }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', e => { if (e.target === el) close(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  });
+}
+
 (async function init() {
   // Initialize Framework7
   f7app = new Framework7({
@@ -4756,6 +4771,9 @@ function _initClassicSession() {
     if (cs && state.vaults && state.vaults.length > 0) { cs.classList.remove('hidden'); renderDashChart(); }
     else if (cs) { cs.classList.add('hidden'); }
   });
+
+  // Modal backdrop close via event delegation (accessibility)
+  _initModalBackdropClose();
 
   // App lock on resume from background
   initAppLockListener();
