@@ -654,47 +654,51 @@ function _createNewVaultFromChain(id, v, strategy, currency, decimals, txHistory
   return newVault;
 }
 
+async function _processOnChainVault(caveau, vid, strategy, label, provider) {
+  const id = Number(vid);
+  if (isVaultDeleted(id, strategy)) return false;
+
+  let v;
+  try { v = await caveau.getVault(id); }
+  catch(e) { console.warn(`[Chain/${label}] Failed to read vault`, id, e); return false; }
+  if (v.name === '__DELETED__') return false;
+
+  const tokenAddr = v.token.toLowerCase();
+  const currency = TOKEN_ADDR_TO_SYMBOL[tokenAddr] || 'USDC';
+  const decimals = TOKEN_DECIMALS[currency] || 6;
+  const depositedField = strategy === 'aave' ? v.principalDeposited : v.totalDeposited;
+  const txHistory = await _fetchTxHistory(caveau, id, decimals, depositedField, label, provider);
+
+  const existing = state.vaults.find(lv => lv.onChainVaultId === id && (lv.onChainContract || lv.strategy || 'base') === strategy);
+  if (existing) return _updateExistingVault(existing, v, strategy, decimals, txHistory);
+
+  const newVault = _createNewVaultFromChain(id, v, strategy, currency, decimals, txHistory);
+  state.vaults.push(newVault);
+  console.log(`[Chain/${label}] Recovered vault:`, newVault.name, '(on-chain ID:', id, ')');
+  return true;
+}
+
+async function _syncContractVaults(caveau, strategy, label, provider) {
+  let vaultIds;
+  try { vaultIds = await caveau.getOwnerVaults(state.address); } catch { return false; }
+  if (!vaultIds || vaultIds.length === 0) return false;
+  let changed = false;
+  for (const vid of vaultIds) {
+    if (await _processOnChainVault(caveau, vid, strategy, label, provider)) changed = true;
+  }
+  return changed;
+}
+
 async function syncVaultsFromChain() {
   const provider = state.walletSigner?.provider || getFallbackProvider();
   let changed = false;
-
   const contracts = [
     { contract: new ethers.Contract(CAVEAU_CONTRACT, CAVEAU_ABI, provider), strategy: 'base', label: 'Base' },
     { contract: new ethers.Contract(CAVEAU_AAVE_CONTRACT, CAVEAU_AAVE_ABI, provider), strategy: 'aave', label: 'Aave' },
   ];
-
   for (const { contract: caveau, strategy, label } of contracts) {
-    let vaultIds;
-    try { vaultIds = await caveau.getOwnerVaults(state.address); } catch { continue; }
-    if (!vaultIds || vaultIds.length === 0) continue;
-
-    for (const vid of vaultIds) {
-      const id = Number(vid);
-      if (isVaultDeleted(id, strategy)) continue;
-
-      let v;
-      try { v = await caveau.getVault(id); }
-      catch(e) { console.warn(`[Chain/${label}] Failed to read vault`, id, e); continue; }
-      if (v.name === '__DELETED__') continue;
-
-      const tokenAddr = v.token.toLowerCase();
-      const currency = TOKEN_ADDR_TO_SYMBOL[tokenAddr] || 'USDC';
-      const decimals = TOKEN_DECIMALS[currency] || 6;
-      const depositedField = strategy === 'aave' ? v.principalDeposited : v.totalDeposited;
-      const txHistory = await _fetchTxHistory(caveau, id, decimals, depositedField, label, provider);
-
-      const existing = state.vaults.find(lv => lv.onChainVaultId === id && (lv.onChainContract || lv.strategy || 'base') === strategy);
-      if (existing) {
-        if (_updateExistingVault(existing, v, strategy, decimals, txHistory)) changed = true;
-      } else {
-        const newVault = _createNewVaultFromChain(id, v, strategy, currency, decimals, txHistory);
-        state.vaults.push(newVault);
-        changed = true;
-        console.log(`[Chain/${label}] Recovered vault:`, newVault.name, '(on-chain ID:', id, ')');
-      }
-    }
+    if (await _syncContractVaults(caveau, strategy, label, provider)) changed = true;
   }
-
   if (changed) await saveVaults();
 }
 
@@ -1025,6 +1029,17 @@ function _updateGasStatus(polBal) {
   else { statusEl.textContent = '✓ OK'; statusEl.className = 'text-[10px] text-emerald-400'; }
 }
 
+function _updateGasCardDOM(polBal, balUsd, totalSpent, spentUsd, cur, cs) {
+  const isPol = cur === 'POL';
+  const _el = (id, txt, cls) => { const e = document.getElementById(id); if (e) { e.textContent = txt; if (cls) e.className = cls; } };
+  _el('gas-balance-val', _formatPolValue(polBal, balUsd, cur, 2), _getGasBalanceClass(polBal));
+  _el('gas-balance-cur', isPol ? 'POL' : cs);
+  _el('gas-balance-pol', isPol ? '' : `(${polBal.toFixed(4)} POL)`);
+  _el('gas-spent-val', _formatPolValue(totalSpent, spentUsd, cur, 4));
+  _el('gas-spent-cur', isPol ? 'POL' : cs);
+  _el('gas-spent-pol', isPol ? '' : `(${totalSpent.toFixed(4)} POL)`);
+}
+
 async function updateGasCard() {
   const card = document.getElementById('gas-card');
   if (!card || !state.address) { if (card) card.classList.add('hidden'); return; }
@@ -1040,19 +1055,7 @@ async function updateGasCard() {
   const balUsd = polBal * _polPriceUsd;
   const spentUsd = totalSpent * _polPriceUsd;
 
-  const balValEl = document.getElementById('gas-balance-val');
-  if (balValEl) { balValEl.textContent = _formatPolValue(polBal, balUsd, cur, 2); balValEl.className = _getGasBalanceClass(polBal); }
-  const balCurEl = document.getElementById('gas-balance-cur');
-  if (balCurEl) balCurEl.textContent = cur === 'POL' ? 'POL' : cs;
-  const balPolEl = document.getElementById('gas-balance-pol');
-  if (balPolEl) balPolEl.textContent = cur !== 'POL' ? `(${polBal.toFixed(4)} POL)` : '';
-
-  const spentValEl = document.getElementById('gas-spent-val');
-  if (spentValEl) spentValEl.textContent = _formatPolValue(totalSpent, spentUsd, cur, 4);
-  const spentCurEl = document.getElementById('gas-spent-cur');
-  if (spentCurEl) spentCurEl.textContent = cur === 'POL' ? 'POL' : cs;
-  const spentPolEl = document.getElementById('gas-spent-pol');
-  if (spentPolEl) spentPolEl.textContent = cur !== 'POL' ? `(${totalSpent.toFixed(4)} POL)` : '';
+  _updateGasCardDOM(polBal, balUsd, totalSpent, spentUsd, cur, cs);
 
   _updateGasStatus(polBal);
 }
@@ -1627,7 +1630,7 @@ App.refreshAfterOnramp = async function() {
     // Stablecoins arrived — just update
     if (stableDelta >= 0.01) {
       await refreshWalletBalance(false);
-      await renderDashboard();
+      renderDashboard();
       setMsg(t('onramp.stablecoin_received', {amount: stableDelta.toFixed(2)}));
     }
 
@@ -1830,32 +1833,25 @@ function renderDashboard() {
   }
   document.getElementById('stat-vaults').textContent = `(${vaults.length})`;
   const beginnerBanner = document.getElementById('beginner-start-banner');
-  if (beginnerBanner) {
-    if (lockedTotal <= 0 && vaults.length === 0) beginnerBanner.classList.remove('hidden');
-    else beginnerBanner.classList.add('hidden');
-  }
+  if (beginnerBanner) beginnerBanner.classList.toggle('hidden', !(lockedTotal <= 0 && vaults.length === 0));
   updateInstallBanner();
   updateGasCard();
   updateDonateSymbols();
 
   _renderNextUnlockInfo(vaults);
 
-  // Show/hide quick action buttons
   const quickActions = document.getElementById('home-quick-actions');
   if (quickActions) {
-    if (vaults.length > 0) { quickActions.classList.remove('hidden'); quickActions.style.display = 'grid'; }
-    else { quickActions.classList.add('hidden'); quickActions.style.display = 'none'; }
+    const show = vaults.length > 0;
+    quickActions.classList.toggle('hidden', !show);
+    quickActions.style.display = show ? 'grid' : 'none';
   }
 
   renderVaultCards();
-  if (vaults.length > 0) {
-    document.getElementById('chart-section').classList.remove('hidden');
-    document.getElementById('empty-vaults').classList.add('hidden');
-    renderDashChart();
-  } else {
-    document.getElementById('chart-section').classList.add('hidden');
-    document.getElementById('empty-vaults').classList.remove('hidden');
-  }
+  const hasVaults = vaults.length > 0;
+  document.getElementById('chart-section').classList.toggle('hidden', !hasVaults);
+  document.getElementById('empty-vaults').classList.toggle('hidden', hasVaults);
+  if (hasVaults) renderDashChart();
 }
 
 let _vaultFilter = 'all';
@@ -2234,21 +2230,11 @@ App.openVaultDetail = function(id) {
   openModal('modal-vault-detail');
 };
 
-function renderVaultDetail(vault) {
-  const total = vaultTotal(vault);
-  const pct = vault.target ? Math.min((total / vault.target) * 100, 100) : 0;
-  const mode = vault.unlockMode ?? 0;
-  const unlocked = isVaultUnlocked(vault);
-
-  // Populate wallet address in direct transfer section
+function _renderDetailHero(vault, total, pct) {
   const detailAddr = document.getElementById('detail-wallet-addr');
   if (detailAddr && state.address) detailAddr.textContent = state.address;
-
-  // Hide rename form on re-render
   const renameForm = document.getElementById('vault-rename-form');
   if (renameForm) renameForm.classList.add('hidden');
-
-  // Hero section
   const iconEl = document.getElementById('detail-icon');
   if (iconEl) iconEl.innerHTML = renderVaultIcon(vault.icon || '🐷', 56, true);
   document.getElementById('detail-title').textContent = vault.name || t('common.vault');
@@ -2256,96 +2242,81 @@ function renderVaultDetail(vault) {
   const curLabel = document.getElementById('detail-currency-label');
   if (curLabel) curLabel.textContent = vault.currency;
 
-  // Progress bar — only show when vault has a target amount
   const progressSection = document.getElementById('detail-progress-section');
-  if (progressSection) {
-    if (vault.target) {
-      progressSection.style.display = '';
-      document.getElementById('detail-target').textContent = `${Number(vault.target).toFixed(2)} ${vault.currency}`;
-      document.getElementById('detail-pct').textContent = `${pct.toFixed(1)}%`;
-      const bar = document.getElementById('detail-progress-bar');
-      bar.style.width = `${Math.max(pct, 2)}%`;
-    } else {
-      progressSection.style.display = 'none';
-    }
-  }
-
-  const countdown = document.getElementById('detail-countdown');
-  if (unlocked) {
-    countdown.innerHTML = '<i class="f7-icons" style="font-size:20px;vertical-align:middle;margin-right:4px">lock_open_fill</i> ' + t('detail.open');
-    countdown.style.color = '#4ade80';
+  if (!progressSection) return;
+  if (vault.target) {
+    progressSection.style.display = '';
+    document.getElementById('detail-target').textContent = `${Number(vault.target).toFixed(2)} ${vault.currency}`;
+    document.getElementById('detail-pct').textContent = `${pct.toFixed(1)}%`;
+    document.getElementById('detail-progress-bar').style.width = `${Math.max(pct, 2)}%`;
   } else {
-    countdown.style.color = '#f1f5f9';
-    if (mode === 0) {
-      const d = daysUntil(vault.unlockDate);
-      if (d <= 0) {
-        countdown.innerHTML = '<i class="f7-icons" style="font-size:20px;vertical-align:middle;margin-right:4px">lock_open_fill</i> ' + t('detail.open'); countdown.style.color = '#4ade80';
-      } else if (d < 1) {
-        const unlockD = parseDateInput(vault.unlockDate);
-        const hoursLeft = Math.max(0, Math.ceil((unlockD - new Date()) / 3600000));
-        countdown.textContent = hoursLeft > 0 ? t('detail.hours', {h: hoursLeft}) : t('detail.few_minutes');
-      } else {
-        const mo = Math.floor(d/30), dd = d%30;
-        countdown.textContent = mo > 0 ? t('detail.months_days', {mo: mo, dd: dd}) : t('dash.days', {d: d});
-      }
-    } else if (mode === 1) {
-      const remaining = Math.max(0, vault.target - total);
-      countdown.textContent = t('detail.to_reach', {amount: remaining.toFixed(0), currency: vault.currency});
-    } else {
-      countdown.innerHTML = '<i class="f7-icons" style="font-size:20px;vertical-align:middle;margin-right:4px">lock_fill</i> ' + t('detail.locked');
-    }
+    progressSection.style.display = 'none';
   }
+}
 
-  const condEl = document.getElementById('detail-conditions');
-  let condHTML = '';
+function _renderDetailCountdown(vault, mode, total, unlocked) {
+  const countdown = document.getElementById('detail-countdown');
+  const openIcon = '<i class="f7-icons" style="font-size:20px;vertical-align:middle;margin-right:4px">lock_open_fill</i> ';
+  if (unlocked) {
+    countdown.innerHTML = openIcon + t('detail.open');
+    countdown.style.color = '#4ade80';
+    return;
+  }
+  countdown.style.color = '#f1f5f9';
+  if (mode === 1) {
+    countdown.textContent = t('detail.to_reach', {amount: Math.max(0, vault.target - total).toFixed(0), currency: vault.currency});
+    return;
+  }
+  if (mode !== 0) {
+    countdown.innerHTML = '<i class="f7-icons" style="font-size:20px;vertical-align:middle;margin-right:4px">lock_fill</i> ' + t('detail.locked');
+    return;
+  }
+  const d = daysUntil(vault.unlockDate);
+  if (d <= 0) { countdown.innerHTML = openIcon + t('detail.open'); countdown.style.color = '#4ade80'; return; }
+  if (d < 1) {
+    const hoursLeft = Math.max(0, Math.ceil((parseDateInput(vault.unlockDate) - new Date()) / 3600000));
+    countdown.textContent = hoursLeft > 0 ? t('detail.hours', {h: hoursLeft}) : t('detail.few_minutes');
+  } else {
+    const mo = Math.floor(d/30), dd = d%30;
+    countdown.textContent = mo > 0 ? t('detail.months_days', {mo, dd}) : t('dash.days', {d});
+  }
+}
+
+function _buildConditionHTML(vault, mode, total) {
+  let html = '';
   const hasDate = mode === 0 || mode === 2 || mode === 3;
   const hasAmount = mode === 1 || mode === 2 || mode === 3;
   const dateMet = vault.unlockDate ? daysUntil(vault.unlockDate) <= 0 : false;
   const amountMet = vault.target ? total >= vault.target : false;
-  const connector = mode === 2 ? t('detail.or') : (mode === 3 ? t('detail.and') : '');
 
   if (hasDate) {
     const icon = dateMet ? '<i class="f7-icons" style="font-size:14px;color:#4ade80">checkmark_circle_fill</i>' : '<i class="f7-icons" style="font-size:14px;color:#60a5fa">clock</i>';
     const d = daysUntil(vault.unlockDate);
-    const txt = dateMet ? t('detail.date_reached', {date: fmtDate(vault.unlockDate)}) : t('detail.condition_date_pending', {date: fmtDate(vault.unlockDate), d: d});
-    condHTML += `<div class="flex items-center gap-2 ${dateMet ? 'text-green-400' : 'text-slate-300'}">${icon} <span>${txt}</span></div>`;
+    const txt = dateMet ? t('detail.date_reached', {date: fmtDate(vault.unlockDate)}) : t('detail.condition_date_pending', {date: fmtDate(vault.unlockDate), d});
+    html += `<div class="flex items-center gap-2 ${dateMet ? 'text-green-400' : 'text-slate-300'}">${icon} <span>${txt}</span></div>`;
   }
-  if (connector) {
-    condHTML += `<div class="text-center text-xs text-slate-500 font-semibold">${connector}</div>`;
-  }
+  const connector = mode === 2 ? t('detail.or') : (mode === 3 ? t('detail.and') : '');
+  if (connector) html += `<div class="text-center text-xs text-slate-500 font-semibold">${connector}</div>`;
   if (hasAmount) {
     const icon = amountMet ? '<i class="f7-icons" style="font-size:14px;color:#4ade80">checkmark_circle_fill</i>' : '<i class="f7-icons" style="font-size:14px;color:#60a5fa">money_dollar_circle</i>';
     const txt = amountMet ? t('detail.target_reached', {current: total.toFixed(2), target: Number(vault.target).toFixed(2)}) : `${total.toFixed(2)} / ${Number(vault.target).toFixed(2)} ${vault.currency}`;
-    condHTML += `<div class="flex items-center gap-2 ${amountMet ? 'text-green-400' : 'text-slate-300'}">${icon} <span>${txt}</span></div>`;
+    html += `<div class="flex items-center gap-2 ${amountMet ? 'text-green-400' : 'text-slate-300'}">${icon} <span>${txt}</span></div>`;
   }
-  // Aave interest info
-  const isAaveVault = vault.strategy === 'aave' || vault.onChainContract === 'aave';
-  if (isAaveVault) {
+  const isAave = vault.strategy === 'aave' || vault.onChainContract === 'aave';
+  if (isAave) {
     const interest = vault._aaveEarnedInterest || 0;
     const currentVal = vault._aaveCurrentValue || total;
-    condHTML += `<div class="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+    html += `<div class="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
       <div class="flex items-center gap-2 text-emerald-400 text-sm font-semibold mb-1"><i class="f7-icons" style="font-size:14px">arrow_up_right</i> ${t('detail.aave_title')}</div>
       <div class="text-xs text-slate-300">${t('detail.aave_current')}: <strong class="text-emerald-400">${currentVal.toFixed(4)} ${vault.currency}</strong></div>
       <div class="text-xs text-slate-300">${t('detail.aave_earned')}: <strong class="text-emerald-400">+${interest.toFixed(6)} ${vault.currency}</strong></div>
       <div class="text-[10px] text-slate-500 mt-1">${t('detail.aave_disclaimer')}</div>
     </div>`;
   }
-  condEl.innerHTML = condHTML;
+  return html;
+}
 
-  const unlockDateEl = document.getElementById('detail-unlock-date');
-  unlockDateEl.textContent = unlockModeLabel(mode);
-
-  const panicDateEl = document.getElementById('panic-date');
-  if (vault.unlockDate) {
-    panicDateEl.textContent = t('detail.panic_date', {date: fmtDate(vault.unlockDate)});
-  } else {
-    panicDateEl.textContent = t('detail.panic_target', {target: vault.target, currency: vault.currency});
-  }
-
-  renderTxList(vault);
-  renderVaultChart(vault);
-
-  // ── Withdraw / Withdrawn state ──
+function _renderDetailActions(vault, unlocked, total) {
   const withdrawSection = document.getElementById('vault-withdraw-section');
   const withdrawnNotice = document.getElementById('vault-withdrawn-notice');
   const depositSection = document.getElementById('deposit-section');
@@ -2358,27 +2329,24 @@ function renderVaultDetail(vault) {
   if (deleteBtn) { deleteBtn.classList.add('hidden'); deleteBtn.style.display = ''; }
   if (depositSection) depositSection.classList.remove('hidden');
 
+  const showDelete = (el) => { if (el) { el.classList.remove('hidden'); el.style.display = 'block'; } };
+
   if (vault.withdrawn) {
-    // Already withdrawn — hide deposit, show notice, allow delete
     if (withdrawnNotice) withdrawnNotice.classList.remove('hidden');
     if (depositSection) depositSection.classList.add('hidden');
     if (panicBtn) panicBtn.classList.add('hidden');
-    if (deleteBtn) { deleteBtn.classList.remove('hidden'); deleteBtn.style.display = 'block'; }
+    showDelete(deleteBtn);
   } else if (unlocked) {
-    // Unlocked but not yet withdrawn — show withdraw button, hide deposit
     if (withdrawSection) withdrawSection.classList.remove('hidden');
     if (depositSection) depositSection.classList.add('hidden');
     if (panicBtn) panicBtn.classList.add('hidden');
-    // Delete only if no funds left (total === 0)
-    if (total === 0 && deleteBtn) { deleteBtn.classList.remove('hidden'); deleteBtn.style.display = 'block'; }
-  } else {
-    // Still locked — show deposit, show panic, delete ONLY if vault is empty (no deposits ever made)
-    if (total === 0 && vault.transactions.length === 0) {
-      if (deleteBtn) { deleteBtn.classList.remove('hidden'); deleteBtn.style.display = 'block'; }
-    }
+    if (total === 0) showDelete(deleteBtn);
+  } else if (total === 0 && vault.transactions.length === 0) {
+    showDelete(deleteBtn);
   }
+}
 
-  // ── Setup deposit (auto-detect payment method) ──
+function _renderDetailDepositSetup(vault) {
   state._payMethod = 'direct';
   state._crossChainCoin = null;
   const srcSelect = document.getElementById('deposit-src-token');
@@ -2390,20 +2358,37 @@ function renderVaultDetail(vault) {
   const currSuffix = document.getElementById('deposit-currency-suffix');
   if (currSuffix) currSuffix.textContent = vault.currency;
 
-  // Block deposits for unsupported currencies (e.g. EURC — not on Polygon)
+  const supported = !!TOKEN_ADDRESSES[vault.currency];
+  lockBtn.disabled = !supported;
+  lockBtn.classList.toggle('opacity-40', !supported);
   const depositErr = document.getElementById('deposit-error');
-  if (!TOKEN_ADDRESSES[vault.currency]) {
-    lockBtn.disabled = true;
-    lockBtn.classList.add('opacity-40');
-    if (depositErr) { depositErr.classList.remove('hidden'); depositErr.textContent = t('deposit.unsupported_currency', {currency: vault.currency}); }
-  } else {
-    lockBtn.disabled = false;
-    lockBtn.classList.remove('opacity-40');
-    if (depositErr) { depositErr.classList.add('hidden'); depositErr.textContent = ''; }
+  if (depositErr) {
+    depositErr.classList.toggle('hidden', supported);
+    depositErr.textContent = supported ? '' : t('deposit.unsupported_currency', {currency: vault.currency});
   }
-
-  // Check MATIC balance for gas warning
   if (state.address) checkAndShowMaticWarning();
+}
+
+function renderVaultDetail(vault) {
+  const total = vaultTotal(vault);
+  const pct = vault.target ? Math.min((total / vault.target) * 100, 100) : 0;
+  const mode = vault.unlockMode ?? 0;
+  const unlocked = isVaultUnlocked(vault);
+
+  _renderDetailHero(vault, total, pct);
+  _renderDetailCountdown(vault, mode, total, unlocked);
+
+  document.getElementById('detail-conditions').innerHTML = _buildConditionHTML(vault, mode, total);
+  document.getElementById('detail-unlock-date').textContent = unlockModeLabel(mode);
+  const panicDateEl = document.getElementById('panic-date');
+  panicDateEl.textContent = vault.unlockDate
+    ? t('detail.panic_date', {date: fmtDate(vault.unlockDate)})
+    : t('detail.panic_target', {target: vault.target, currency: vault.currency});
+
+  renderTxList(vault);
+  renderVaultChart(vault);
+  _renderDetailActions(vault, unlocked, total);
+  _renderDetailDepositSetup(vault);
 }
 
 function renderTxList(vault) {
@@ -3409,18 +3394,63 @@ async function getTokenBalance(address, currency) {
   } catch { return null; }
 }
 
+function _populateLockModal(vault, amount, displayCurrency) {
+  const mode = vault.unlockMode ?? 0;
+  document.getElementById('lock-vault-name').textContent = vault.icon + ' ' + vault.name;
+  document.getElementById('lock-amount').textContent    = amount + ' ' + displayCurrency;
+  document.getElementById('lock-mode').textContent      = unlockModeLabel(mode);
+  document.getElementById('lock-address').textContent   = state.address.slice(0,8) + '…' + state.address.slice(-6);
+
+  const dateRow = document.getElementById('lock-date-row');
+  const targetRow = document.getElementById('lock-target-row');
+  dateRow.classList.toggle('hidden', !vault.unlockDate);
+  if (vault.unlockDate) document.getElementById('lock-date').textContent = fmtDate(vault.unlockDate);
+  targetRow.classList.toggle('hidden', !vault.target);
+  if (vault.target) document.getElementById('lock-target').textContent = `${vault.target} ${vault.currency}`;
+
+  document.getElementById('lock-balance').textContent = t('common.loading');
+  document.getElementById('lock-balance').className   = 'text-slate-400 text-sm';
+  document.getElementById('lock-status').textContent  = '';
+  const btn = document.getElementById('lock-execute-btn');
+  btn.disabled = false;
+  btn.textContent = state._swapMode ? t('deposit.convert_and_lock') : t('deposit.lock_btn');
+  btn.onclick = state._swapMode ? () => App.executeSwapAndLock() : () => App.executeCaveauLock();
+}
+
+function _setLockBalanceDisplay(balEl, bal, amount, currency, decimals) {
+  if (bal !== null) {
+    balEl.textContent = t('deposit.available', {bal: bal.toFixed(decimals), currency});
+    balEl.className = bal >= amount ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
+  } else {
+    balEl.textContent = t('deposit.balance_unavailable');
+  }
+}
+
+async function _fetchAndShowLockBalance(vault, amount) {
+  const balEl = document.getElementById('lock-balance');
+  if (!state._swapMode) {
+    const bal = await getTokenBalance(state.address, vault.currency);
+    _setLockBalanceDisplay(balEl, bal, amount, vault.currency, 2);
+    return;
+  }
+  const srcToken = SWAP_TOKENS.find(t => t.symbol === state._swapSrcSymbol);
+  if (!srcToken) return;
+  if (srcToken.address === NATIVE_TOKEN) {
+    const maticBal = await getMaticBalance();
+    _setLockBalanceDisplay(balEl, maticBal, amount, 'MATIC', 4);
+  } else {
+    const srcBal = await getTokenBalance(state.address, state._swapSrcSymbol);
+    _setLockBalanceDisplay(balEl, srcBal, amount, state._swapSrcSymbol, 4);
+  }
+}
+
 App.showCaveauLock = async function() {
   const vault = state.vaults.find(v => v.id === state.currentVaultId);
   if (!vault) return;
 
-  // Cross-chain: route to SideShift modal (no amount needed upfront)
   if (state._payMethod === 'crosschain' && state._crossChainCoin) {
     const ccIdx = CROSS_CHAINS.findIndex(c => c.symbol === state._crossChainCoin.symbol);
-    if (ccIdx >= 0) {
-      App.openCrossChainModal();
-      App.selectCrossChainCoin(ccIdx);
-      return;
-    }
+    if (ccIdx >= 0) { App.openCrossChainModal(); App.selectCrossChainCoin(ccIdx); return; }
   }
 
   const amount = parseFloat(document.getElementById('deposit-amount').value);
@@ -3431,73 +3461,13 @@ App.showCaveauLock = async function() {
   state._swapMode = srcSel !== 'native';
   state._swapSrcSymbol = srcSel;
 
-  const mode = vault.unlockMode ?? 0;
   const displayCurrency = state._swapMode ? srcSel : vault.currency;
-  document.getElementById('lock-vault-name').textContent = vault.icon + ' ' + vault.name;
-  document.getElementById('lock-amount').textContent    = amount + ' ' + displayCurrency;
-  document.getElementById('lock-mode').textContent      = unlockModeLabel(mode);
-  document.getElementById('lock-address').textContent   = state.address.slice(0,8) + '…' + state.address.slice(-6);
-
-  const dateRow = document.getElementById('lock-date-row');
-  const targetRow = document.getElementById('lock-target-row');
-  if (vault.unlockDate) {
-    document.getElementById('lock-date').textContent = fmtDate(vault.unlockDate);
-    dateRow.classList.remove('hidden');
-  } else {
-    dateRow.classList.add('hidden');
-  }
-  if (vault.target) {
-    document.getElementById('lock-target').textContent = `${vault.target} ${vault.currency}`;
-    targetRow.classList.remove('hidden');
-  } else {
-    targetRow.classList.add('hidden');
-  }
-
-  document.getElementById('lock-balance').textContent   = t('common.loading');
-  document.getElementById('lock-balance').className     = 'text-slate-400 text-sm';
-  document.getElementById('lock-status').textContent    = '';
-  const btn = document.getElementById('lock-execute-btn');
-  btn.disabled = false;
-  if (state._swapMode) {
-    btn.textContent = t('deposit.convert_and_lock');
-    btn.onclick = () => App.executeSwapAndLock();
-  } else {
-    btn.textContent = t('deposit.lock_btn');
-    btn.onclick = () => App.executeCaveauLock();
-  }
+  _populateLockModal(vault, amount, displayCurrency);
 
   App.closeModal('modal-vault-detail');
   App.openModal('modal-caveau-lock');
 
-  if (state._swapMode) {
-    const srcToken = SWAP_TOKENS.find(t => t.symbol === state._swapSrcSymbol);
-    if (srcToken && srcToken.address === NATIVE_TOKEN) {
-      const maticBal = await getMaticBalance();
-      const balEl = document.getElementById('lock-balance');
-      if (maticBal !== null) {
-        balEl.textContent = t('deposit.available', {bal: maticBal.toFixed(4), currency: 'MATIC'});
-        balEl.className = maticBal >= amount ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
-      }
-    } else if (srcToken) {
-      const srcBal = await getTokenBalance(state.address, state._swapSrcSymbol);
-      const balEl = document.getElementById('lock-balance');
-      if (srcBal !== null) {
-        balEl.textContent = t('deposit.available', {bal: srcBal.toFixed(4), currency: state._swapSrcSymbol});
-        balEl.className = srcBal >= amount ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
-      } else {
-        balEl.textContent = t('deposit.balance_unavailable');
-      }
-    }
-  } else {
-    const bal = await getTokenBalance(state.address, vault.currency);
-    const balEl = document.getElementById('lock-balance');
-    if (bal !== null) {
-      balEl.textContent = t('deposit.available', {bal: bal.toFixed(2), currency: vault.currency});
-      balEl.className   = bal >= amount ? 'text-green-400 text-sm' : 'text-red-400 text-sm';
-    } else {
-      balEl.textContent = t('deposit.balance_unavailable');
-    }
-  }
+  await _fetchAndShowLockBalance(vault, amount);
 };
 
 App.executeCaveauLock = async function() {
@@ -4657,34 +4627,26 @@ function initAppLockListener() {
   });
 }
 
-function showAppLockScreen() {
-  // TW users without biometric: no lock (Thirdweb session handles security)
-  if (isTwUser() && !isBioConfigured()) return;
+function _setLockScreenButtons(isTw, bioConfigured) {
+  const bioBtn = document.getElementById('lock-screen-bio-btn');
+  const pinBtn = document.getElementById('lock-screen-pin-btn');
+  const reloginBtn = document.getElementById('lock-screen-relogin-btn');
+  const bioDisplay = bioConfigured ? 'block' : 'none';
+  if (bioBtn) bioBtn.style.display = bioDisplay;
+  if (pinBtn) pinBtn.style.display = isTw ? 'none' : '';
+  if (reloginBtn) reloginBtn.style.display = isTw ? '' : 'none';
+}
 
+function showAppLockScreen() {
+  if (isTwUser() && !isBioConfigured()) return;
   const lockEl = document.getElementById('app-lock-screen');
   if (!lockEl) return;
   lockEl.style.display = 'flex';
 
-  const bioBtn = document.getElementById('lock-screen-bio-btn');
-  const pinBtn = document.getElementById('lock-screen-pin-btn');
-  const reloginBtn = document.getElementById('lock-screen-relogin-btn');
   const bioConfigured = isBioConfigured();
-
-  // TW users: biometric only, no PIN button, show re-login fallback
-  if (isTwUser()) {
-    if (bioBtn) bioBtn.style.display = bioConfigured ? 'block' : 'none';
-    if (pinBtn) pinBtn.style.display = 'none';
-    if (reloginBtn) reloginBtn.style.display = '';
-  } else {
-    // Classic users: show bio if configured, always show PIN, no re-login
-    if (bioBtn) bioBtn.style.display = bioConfigured ? 'block' : 'none';
-    if (pinBtn) pinBtn.style.display = '';
-    if (reloginBtn) reloginBtn.style.display = 'none';
-  }
+  _setLockScreenButtons(isTwUser(), bioConfigured);
 
   if (typeof applyTranslations === 'function') applyTranslations();
-
-  // Auto-trigger biometric if available
   if (bioConfigured) setTimeout(() => App.unlockLockScreen('bio'), 300);
 }
 
