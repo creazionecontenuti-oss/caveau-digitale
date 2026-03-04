@@ -5,6 +5,10 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=creazionecontenuti-oss_caveau-digitale&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=creazionecontenuti-oss_caveau-digitale)
 [![Snyk Vulnerabilities](https://snyk.io/test/github/creazionecontenuti-oss/caveau-digitale/badge.svg)](https://snyk.io/test/github/creazionecontenuti-oss/caveau-digitale)
 [![Security Audit](https://img.shields.io/badge/Security_Audit-Passed-brightgreen?style=flat&logo=shield)](./SECURITY-AUDIT.md)
+[![Mythril](https://img.shields.io/badge/Mythril-Passed-brightgreen?style=flat&logo=ethereum)](./SECURITY-AUDIT.md#smart-contract-symbolic-execution--mythril)
+[![Aderyn](https://img.shields.io/badge/Aderyn-Passed-brightgreen?style=flat&logo=rust)](./SECURITY-AUDIT.md#smart-contract-static-analysis--aderyn-cyfrin)
+[![Fuzz Testing](https://img.shields.io/badge/Fuzz_Testing-24%2F24_Passed-brightgreen?style=flat&logo=rust)](./SECURITY-AUDIT.md#fuzz-testing--foundry)
+[![Bug Bounty](https://img.shields.io/badge/Bug_Bounty-Active-orange?style=flat&logo=openbugbounty)](./SECURITY.md)
 [![Contracts Verified](https://img.shields.io/badge/Polygonscan-Verified-blue?style=flat&logo=ethereum)](https://polygonscan.com/address/0x1FcbF2A6456aF7435c868666Be25774d92c2BA06#code)
 
 A Progressive Web App that turns willpower into a mathematical constraint. Your savings are locked in a smart contract until the date you choose — nobody, not even you, can touch them before then.
@@ -101,6 +105,10 @@ Both contracts are **non-upgradeable** and have **no admin functions**. Once dep
 
 A comprehensive security audit has been performed using industry-standard tools. Full report: [`SECURITY-AUDIT.md`](./SECURITY-AUDIT.md)
 
+### Bug Bounty
+
+We run a responsible disclosure program for our smart contracts. Valid reporters are credited in the **Security Hall of Fame**. See [`SECURITY.md`](./SECURITY.md) for scope, rules, and how to report.
+
 #### Audited By
 
 <p align="center">
@@ -113,6 +121,8 @@ A comprehensive security audit has been performed using industry-standard tools.
   <a href="https://polygonscan.com/address/0x1FcbF2A6456aF7435c868666Be25774d92c2BA06#code"><img src="loghi-security-audit/polygonscan logo.svg" alt="Polygonscan Verified" height="50"></a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://github.com/aderyn-labs/aderyn"><img src="loghi-security-audit/aderyn logo.png" alt="Aderyn" height="50"></a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/Consensys/mythril"><img src="loghi-security-audit/mythril logo.png" alt="Mythril" height="50"></a>
 </p>
 
 | Tool | Target | Result |
@@ -121,6 +131,12 @@ A comprehensive security audit has been performed using industry-standard tools.
 | **Snyk** | Dependencies + code | ✅ Continuous monitoring — No known vulnerabilities |
 | **Slither** (Trail of Bits) | CaveauDigitaleV2.sol | ✅ 0 high, 0 medium |
 | **Slither** (Trail of Bits) | CaveauAave.sol | ✅ 0 high, 4 medium (all mitigated/false positives) |
+| **Aderyn** (Cyfrin) | All 3 contracts | ✅ 0 high (1 false positive), 7 low (informational) |
+| **Mythril** (Consensys) | CaveauDigitale.sol | ✅ 0 high, 0 medium — all findings are low/false positives |
+| **Mythril** (Consensys) | CaveauDigitaleV2.sol | ✅ 0 high, 0 medium — all findings are low/false positives |
+| **Mythril** (Consensys) | CaveauAave.sol | ✅ 0 issues found |
+| **Foundry Fuzz** | CaveauDigitaleV2.sol | ✅ 13/13 properties passed (10,000 runs each) |
+| **Foundry Fuzz** | CaveauAave.sol | ✅ 11/11 properties passed (10,000 runs each) |
 | **Polygonscan** | Both contracts | ✅ Source code verified on-chain |
 | **ESLint + security plugin** | app.js | ✅ 0 errors, 64 warnings (all false positives) |
 | **npm audit** | Dependencies | ✅ 1 moderate (legacy dep, not used at runtime) |
@@ -131,6 +147,7 @@ Run audits locally:
 npm run audit:contracts   # Slither on both smart contracts
 npm run lint              # ESLint with security plugin
 npm run audit:deps        # npm dependency audit
+forge test -vv            # Foundry fuzz tests (10,000 runs)
 ```
 
 ## How It Works
