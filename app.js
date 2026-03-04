@@ -199,21 +199,21 @@ const ICON_MAP = {};
 PRESETS.forEach(function(p){ ICON_MAP[p.icon] = { f7: p.f7, color: p.color }; });
 
 function renderVaultIcon(icon, size, showGradient) {
-  var mapped = ICON_MAP[icon];
+  const mapped = ICON_MAP[icon];
   if (mapped) {
-    var iconSize = Math.round(size * 0.5);
-    var bg = showGradient ? 'background:linear-gradient(135deg,' + mapped.color + ',' + adjustColor(mapped.color, -30) + ')' : 'background:rgba(148,163,184,.12)';
-    var clr = showGradient ? '#fff' : mapped.color;
+    const iconSize = Math.round(size * 0.5);
+    const bg = showGradient ? 'background:linear-gradient(135deg,' + mapped.color + ',' + adjustColor(mapped.color, -30) + ')' : 'background:rgba(148,163,184,.12)';
+    const clr = showGradient ? '#fff' : mapped.color;
     return '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;'+bg+';display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="f7-icons" style="font-size:'+iconSize+'px;color:'+clr+'">'+mapped.f7+'</i></div>';
   }
   return '<span style="font-size:'+Math.round(size*0.7)+'px;line-height:1">'+icon+'</span>';
 }
 
 function adjustColor(hex, amount) {
-  var num = parseInt(hex.replace('#',''), 16);
-  var r = Math.min(255, Math.max(0, (num >> 16) + amount));
-  var g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
-  var b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+  const num = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
   return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
 }
 
@@ -2568,13 +2568,13 @@ async function fetchGasHistory() {
     const entries = data.result
       .filter(function(tx){ return tx.from.toLowerCase() === addr; })
       .map(function(tx){
-        var costWei = BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
+        const costWei = BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
         return { txHash: tx.hash, pol: Number(ethers.formatEther(costWei)), ts: Number(tx.timeStamp) * 1000, addr: addr };
       });
     if (entries.length > 0) {
-      var existing; try { existing = JSON.parse(localStorage.getItem(STORAGE.GAS_LOG) || '[]'); } catch(e2) { existing = []; }
-      var hashes = new Set(existing.map(function(e){ return e.txHash; }));
-      var newEntries = entries.filter(function(e){ return !hashes.has(e.txHash); });
+      let existing; try { existing = JSON.parse(localStorage.getItem(STORAGE.GAS_LOG) || '[]'); } catch(e2) { existing = []; }
+      const hashes = new Set(existing.map(function(e){ return e.txHash; }));
+      const newEntries = entries.filter(function(e){ return !hashes.has(e.txHash); });
       if (newEntries.length > 0) {
         localStorage.setItem(STORAGE.GAS_LOG, JSON.stringify(existing.concat(newEntries)));
       }
@@ -2640,7 +2640,7 @@ function currencySymbol(cur) {
   return cur === 'EUR' ? '€' : cur === 'POL' ? '◈' : '$';
 }
 function stablecoinToFiat(coin) {
-  var map = { USDC: 'USD', USDT: 'USD', DAI: 'USD', EURe: 'EUR', ZCHF: 'CHF' };
+  const map = { USDC: 'USD', USDT: 'USD', DAI: 'USD', EURe: 'EUR', ZCHF: 'CHF' };
   return map[coin] || coin;
 }
 function convertFromUsd(usdAmount, cur) {
@@ -2892,9 +2892,11 @@ function updateBiometricUI() {
   const configured = isBioConfigured();
 
   if (status) {
-    const key = !supported ? 'bio.not_supported' : configured ? 'bio.active' : 'bio.not_active';
+    let key = 'bio.not_active';
+    if (!supported) key = 'bio.not_supported';
+    else if (configured) key = 'bio.active';
     status.textContent = t(key);
-    status.setAttribute('data-i18n', key);
+    status.dataset.i18n = key;
   }
   if (enableBtn) enableBtn.classList.toggle('hidden', !supported || configured);
   if (disableBtn) disableBtn.classList.toggle('hidden', !configured);
@@ -4323,7 +4325,7 @@ App.twStartLogin = async function() {
 App.twSendCode = async function() {
   const emailInput = document.getElementById('tw-email-input');
   const email = (emailInput.value || '').trim().toLowerCase();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email)) {
     showError('tw-email-error', t('tw.invalid_email'));
     return;
   }
