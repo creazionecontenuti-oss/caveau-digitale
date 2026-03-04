@@ -2,6 +2,7 @@
 
 > **Non-Custodial Time-Lock Savings Protocol on Polygon**
 
+[![CI](https://github.com/creazionecontenuti-oss/caveau-digitale/actions/workflows/ci.yml/badge.svg)](https://github.com/creazionecontenuti-oss/caveau-digitale/actions/workflows/ci.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=creazionecontenuti-oss_caveau-digitale&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=creazionecontenuti-oss_caveau-digitale)
 [![Snyk Vulnerabilities](https://snyk.io/test/github/creazionecontenuti-oss/caveau-digitale/badge.svg)](https://snyk.io/test/github/creazionecontenuti-oss/caveau-digitale)
 [![Security Audit](https://img.shields.io/badge/Security_Audit-Passed-brightgreen?style=flat&logo=shield)](./SECURITY-AUDIT.md)
@@ -10,6 +11,11 @@
 [![Fuzz Testing](https://img.shields.io/badge/Fuzz_Testing-24%2F24_Passed-brightgreen?style=flat&logo=rust)](./SECURITY-AUDIT.md#fuzz-testing--foundry)
 [![Bug Bounty](https://img.shields.io/badge/Bug_Bounty-Active-orange?style=flat&logo=openbugbounty)](./SECURITY.md)
 [![Contracts Verified](https://img.shields.io/badge/Polygonscan-Verified-blue?style=flat&logo=ethereum)](https://polygonscan.com/address/0x1FcbF2A6456aF7435c868666Be25774d92c2BA06#code)
+[![License](https://img.shields.io/github/license/creazionecontenuti-oss/caveau-digitale?style=flat)](./LICENSE)
+[![Last Commit](https://img.shields.io/github/last-commit/creazionecontenuti-oss/caveau-digitale?style=flat)](https://github.com/creazionecontenuti-oss/caveau-digitale/commits/main)
+[![GitHub Stars](https://img.shields.io/github/stars/creazionecontenuti-oss/caveau-digitale?style=flat)](https://github.com/creazionecontenuti-oss/caveau-digitale/stargazers)
+[![Open Issues](https://img.shields.io/github/issues/creazionecontenuti-oss/caveau-digitale?style=flat)](https://github.com/creazionecontenuti-oss/caveau-digitale/issues)
+[![Repo Size](https://img.shields.io/github/repo-size/creazionecontenuti-oss/caveau-digitale?style=flat)](https://github.com/creazionecontenuti-oss/caveau-digitale)
 
 A Progressive Web App that turns willpower into a mathematical constraint. Your savings are locked in a smart contract until the date you choose — nobody, not even you, can touch them before then.
 
