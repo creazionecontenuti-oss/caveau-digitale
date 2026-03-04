@@ -42,7 +42,7 @@ find . -not -path '*/node_modules/*' \
       depth=$(echo "$path" | tr -cd '/' | wc -c)
       indent=$(printf '%*s' "$((depth * 2))" '')
       name=$(basename "$path")
-      if [ -d "$path" ]; then
+      if [[ -d "$path" ]]; then
         echo "${indent}📁 ${name}/"
       else
         size=$(wc -c < "$path" 2>/dev/null | tr -d ' ')
